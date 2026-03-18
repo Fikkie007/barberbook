@@ -1,13 +1,21 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarDays, Smartphone, BarChart3, MessageCircle, Globe, CheckCircle } from "lucide-react";
+import {
+  CalendarDays,
+  Smartphone,
+  BarChart3,
+  MessageCircle,
+  Globe,
+  CheckCircle,
+} from "lucide-react";
 
 const features = [
   {
     icon: CalendarDays,
     title: "Booking Online 24/7",
-    description: "Pelanggan bisa booking kapan saja melalui link unik toko Anda",
+    description:
+      "Pelanggan bisa booking kapan saja melalui link unik toko Anda",
   },
   {
     icon: MessageCircle,
@@ -22,7 +30,8 @@ const features = [
   {
     icon: Globe,
     title: "Subdomain Unik",
-    description: "Setiap toko memiliki link booking sendiri dengan subdomain unik",
+    description:
+      "Setiap toko memiliki link booking sendiri dengan subdomain unik",
   },
   {
     icon: Smartphone,
@@ -32,7 +41,8 @@ const features = [
   {
     icon: CheckCircle,
     title: "Konfirmasi Otomatis",
-    description: "Sistem konfirmasi jadwal otomatis tanpa perlu follow up manual",
+    description:
+      "Sistem konfirmasi jadwal otomatis tanpa perlu follow up manual",
   },
 ];
 
@@ -62,7 +72,10 @@ export default function LandingPage() {
           </div>
           <nav className="flex items-center gap-4">
             <Link href="/auth/login">
-              <Button variant="ghost" className="text-slate-300 hover:text-white">
+              <Button
+                variant="ghost"
+                className="text-slate-300 hover:text-white"
+              >
                 Masuk
               </Button>
             </Link>
@@ -84,17 +97,25 @@ export default function LandingPage() {
             <span className="text-amber-400">Barbershop</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">
-            Tingkatkan pelayanan toko Anda dengan sistem booking online yang modern.
-            Pelanggan bisa booking 24/7 dengan notifikasi WhatsApp otomatis.
+            Tingkatkan pelayanan toko Anda dengan sistem booking online yang
+            modern. Pelanggan bisa booking 24/7 dengan notifikasi WhatsApp
+            otomatis.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link href="/auth/register">
-              <Button size="lg" className="bg-amber-500 text-slate-900 hover:bg-amber-400 px-8">
+              <Button
+                size="lg"
+                className="bg-amber-500 text-slate-900 hover:bg-amber-400 px-8"
+              >
                 Mulai Gratis Sekarang
               </Button>
             </Link>
             <Link href="#features">
-              <Button size="lg" variant="outline" className="border-slate-600 text-white hover:bg-slate-700">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-slate-600 bg-transparent text-white hover:bg-slate-700 hover:text-white"
+              >
                 Lihat Fitur
               </Button>
             </Link>
@@ -109,7 +130,8 @@ export default function LandingPage() {
             Fitur Lengkap untuk Barbershop
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-slate-400">
-            Semua yang Anda butuhkan untuk mengelola booking dan meningkatkan pelayanan toko
+            Semua yang Anda butuhkan untuk mengelola booking dan meningkatkan
+            pelayanan toko
           </p>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature, index) => (
@@ -152,7 +174,9 @@ export default function LandingPage() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500 text-2xl font-bold text-slate-900">
                 2
               </div>
-              <h3 className="text-xl font-semibold text-white">Tambah Layanan</h3>
+              <h3 className="text-xl font-semibold text-white">
+                Tambah Layanan
+              </h3>
               <p className="mt-2 text-slate-400">
                 Tambahkan layanan dan barber yang tersedia
               </p>
@@ -173,17 +197,20 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="py-20">
         <div className="mx-auto max-w-4xl px-4">
-          <Card className="border-slate-700 bg-gradient-to-r from-amber-500/10 to-transparent">
+          <Card className="border-slate-700 bg-slate-800">
             <CardContent className="p-8 text-center sm:p-12">
               <h2 className="text-2xl font-bold text-white sm:text-3xl">
                 Siap Meningkatkan Pelayanan Toko Anda?
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-slate-400">
-                Bergabung dengan ratusan barbershop yang sudah menggunakan BarberBook
-                untuk meningkatkan pelayanan dan pendapatan mereka.
+                Bergabung dengan ratusan barbershop yang sudah menggunakan
+                BarberBook untuk meningkatkan pelayanan dan pendapatan mereka.
               </p>
               <Link href="/auth/register">
-                <Button size="lg" className="mt-6 bg-amber-500 text-slate-900 hover:bg-amber-400">
+                <Button
+                  size="lg"
+                  className="mt-6 bg-amber-500 text-slate-900 hover:bg-amber-400"
+                >
                   Daftar Gratis Sekarang
                 </Button>
               </Link>
@@ -195,7 +222,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-slate-800 py-8">
         <div className="mx-auto max-w-6xl px-4 text-center text-slate-400">
-          <p>&copy; 2024 BarberBook. Platform Booking Barbershop.</p>
+          <p>&copy; 2026 BarberBook. Platform Booking Barbershop.</p>
         </div>
       </footer>
     </div>

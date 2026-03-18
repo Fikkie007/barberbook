@@ -7,7 +7,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,7 +69,9 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <CardTitle className="text-2xl font-bold text-white">BarberBook</CardTitle>
+          <CardTitle className="text-2xl font-bold text-white">
+            BarberBook
+          </CardTitle>
           <CardDescription className="text-slate-400">
             Masuk ke dashboard toko Anda
           </CardDescription>
@@ -101,7 +110,7 @@ export default function LoginPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 border-0 bg-transparent pt-12">
             <Button
               type="submit"
               disabled={loading}
@@ -111,7 +120,10 @@ export default function LoginPage() {
             </Button>
             <p className="text-sm text-slate-400">
               Belum punya akun?{" "}
-              <Link href="/auth/register" className="text-amber-400 hover:text-amber-300 font-medium">
+              <Link
+                href="/auth/register"
+                className="text-amber-400 hover:text-amber-300 font-medium"
+              >
                 Daftar sekarang
               </Link>
             </p>

@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { format, addDays, startOfDay, isSameDay } from "date-fns";
+import { format, startOfDay, isSameDay } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -27,7 +33,10 @@ interface BookingFormProps {
     whatsappNumber: string;
     openingTime: string;
     closingTime: string;
-    services: Pick<Service, "id" | "name" | "description" | "price" | "duration">[];
+    services: Pick<
+      Service,
+      "id" | "name" | "description" | "price" | "duration"
+    >[];
     barbers: Pick<Barber, "id" | "name">[];
     workingDays: WorkingDayData[];
   };
@@ -68,7 +77,9 @@ export default function BookingForm({ shop }: BookingFormProps) {
     notes: "",
   });
 
-  const selectedService = shop.services.find((s) => s.id === formData.serviceId);
+  const selectedService = shop.services.find(
+    (s) => s.id === formData.serviceId,
+  );
   const selectedBarber = shop.barbers.find((b) => b.id === formData.barberId);
 
   // Generate time slots based on shop hours
@@ -80,9 +91,12 @@ export default function BookingForm({ shop }: BookingFormProps) {
     let currentHour = openHour;
     let currentMin = openMin;
 
-    while (currentHour < closeHour || (currentHour === closeHour && currentMin < closeMin)) {
+    while (
+      currentHour < closeHour ||
+      (currentHour === closeHour && currentMin < closeMin)
+    ) {
       slots.push(
-        `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`
+        `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`,
       );
       currentMin += 30;
       if (currentMin >= 60) {
@@ -121,7 +135,10 @@ export default function BookingForm({ shop }: BookingFormProps) {
     return true;
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | Date | undefined | null) => {
+  const handleInputChange = (
+    field: keyof FormData,
+    value: string | Date | undefined | null,
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value ?? "" }));
   };
 
@@ -163,7 +180,10 @@ export default function BookingForm({ shop }: BookingFormProps) {
         body: JSON.stringify({
           shopId: shop.id,
           serviceId: formData.serviceId,
-          barberId: formData.barberId && formData.barberId !== "any" ? formData.barberId : null,
+          barberId:
+            formData.barberId && formData.barberId !== ""
+              ? formData.barberId
+              : null,
           customerName: formData.customerName,
           customerPhone: formData.customerPhone,
           customerEmail: formData.customerEmail || null,
@@ -193,8 +213,18 @@ export default function BookingForm({ shop }: BookingFormProps) {
       <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
         <CardContent className="pt-6 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500">
-            <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="h-8 w-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-white">Booking Berhasil!</h2>
@@ -204,7 +234,13 @@ export default function BookingForm({ shop }: BookingFormProps) {
           <div className="mt-6 rounded-lg bg-slate-700/50 p-4 text-left">
             <h3 className="font-semibold text-white">Detail Booking</h3>
             <div className="mt-2 space-y-1 text-sm text-slate-300">
-              <p>Tanggal: {formData.bookingDate && format(formData.bookingDate, "EEEE, d MMMM yyyy", { locale: id })}</p>
+              <p>
+                Tanggal:{" "}
+                {formData.bookingDate &&
+                  format(formData.bookingDate, "EEEE, d MMMM yyyy", {
+                    locale: id,
+                  })}
+              </p>
               <p>Waktu: {formData.bookingTime}</p>
               <p>Layanan: {selectedService?.name}</p>
               <p>Total: Rp {selectedService?.price.toLocaleString("id-ID")}</p>
@@ -251,7 +287,9 @@ export default function BookingForm({ shop }: BookingFormProps) {
       {/* Step Content */}
       <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
         <CardHeader>
-          <CardTitle className="text-white">{STEPS[currentStep - 1].title}</CardTitle>
+          <CardTitle className="text-white">
+            {STEPS[currentStep - 1].title}
+          </CardTitle>
           <CardDescription className="text-slate-400">
             {currentStep === 1 && "Pilih layanan yang diinginkan"}
             {currentStep === 2 && "Pilih tanggal dan waktu booking"}
@@ -281,15 +319,22 @@ export default function BookingForm({ shop }: BookingFormProps) {
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-semibold text-white">{service.name}</h3>
+                      <h3 className="font-semibold text-white">
+                        {service.name}
+                      </h3>
                       {service.description && (
-                        <p className="mt-1 text-sm text-slate-400">{service.description}</p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          {service.description}
+                        </p>
                       )}
                       <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
                         <span>{service.duration} menit</span>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="bg-amber-500/20 text-amber-400">
+                    <Badge
+                      variant="secondary"
+                      className="bg-amber-500/20 text-amber-400"
+                    >
                       Rp {service.price.toLocaleString("id-ID")}
                     </Badge>
                   </div>
@@ -310,10 +355,7 @@ export default function BookingForm({ shop }: BookingFormProps) {
                     onSelect={(date) => handleInputChange("bookingDate", date)}
                     disabled={[{ before: startOfDay(new Date()) }]}
                     modifiers={{ available: (date) => isDateAvailable(date) }}
-                    modifiersStyles={{
-                      available: { color: "white" },
-                    }}
-                    className="rounded-md border border-slate-600 bg-slate-700"
+                    className="rounded-lg border border-slate-600 bg-slate-800 p-3 [&_.rdp-month]:text-white [&_.rdp-caption_label]:text-white [&_.rdp-weekday]:text-slate-400 [&_.rdp-day]:text-white [&_button]:text-white [&_button:hover]:bg-slate-700 [&_button[data-selected-single=true]]:bg-amber-500 [&_button[data-selected-single=true]]:text-slate-900 [&_.rdp-day_disabled]:text-slate-600 [&_.rdp-outside]:text-slate-600 [&_.rdp-nav_button]:text-white [&_.rdp-nav_button:hover]:bg-slate-700 [&_.rdp-today]:bg-slate-700 [&_.rdp-today]:text-amber-400"
                   />
                 </div>
               </div>
@@ -325,14 +367,16 @@ export default function BookingForm({ shop }: BookingFormProps) {
                     return (
                       <button
                         key={time}
-                        onClick={() => available && handleInputChange("bookingTime", time)}
+                        onClick={() =>
+                          available && handleInputChange("bookingTime", time)
+                        }
                         disabled={!available}
                         className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                           formData.bookingTime === time
                             ? "bg-amber-500 text-slate-900"
                             : available
-                            ? "bg-slate-700 text-white hover:bg-slate-600"
-                            : "bg-slate-800 text-slate-500 cursor-not-allowed"
+                              ? "bg-slate-700 text-white hover:bg-slate-600"
+                              : "bg-slate-800 text-slate-500 cursor-not-allowed"
                         }`}
                       >
                         {time}
@@ -342,18 +386,35 @@ export default function BookingForm({ shop }: BookingFormProps) {
                 </div>
                 {shop.barbers.length > 0 && (
                   <div className="mt-4">
-                    <Label className="text-slate-300">Pilih Barber (Opsional)</Label>
+                    <Label className="text-slate-300">
+                      Pilih Barber (Opsional)
+                    </Label>
                     <Select
                       value={formData.barberId}
-                      onValueChange={(value) => handleInputChange("barberId", value)}
+                      onValueChange={(value) =>
+                        handleInputChange("barberId", value)
+                      }
                     >
-                      <SelectTrigger className="mt-2 border-slate-600 bg-slate-700 text-white">
-                        <SelectValue placeholder="Pilih barber" />
+                      <SelectTrigger className="mt-2 w-full border-slate-600 bg-slate-700 text-white">
+                        <SelectValue placeholder="Pilih barber">
+                          {formData.barberId === ""
+                            ? "Barber manapun"
+                            : shop.barbers.find((b) => b.id === formData.barberId)?.name || "Pilih barber"}
+                        </SelectValue>
                       </SelectTrigger>
-                      <SelectContent className="border-slate-600 bg-slate-700">
-                        <SelectItem value="any">Barber manapun</SelectItem>
+                      <SelectContent className="border-slate-600 bg-slate-800 text-white">
+                        <SelectItem
+                          value=""
+                          className="text-white bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 focus:bg-amber-500/20 focus:text-amber-400"
+                        >
+                          Barber manapun
+                        </SelectItem>
                         {shop.barbers.map((barber) => (
-                          <SelectItem key={barber.id} value={barber.id}>
+                          <SelectItem
+                            key={barber.id}
+                            value={barber.id}
+                            className="text-white bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 focus:bg-amber-500/20 focus:text-amber-400"
+                          >
                             {barber.name}
                           </SelectItem>
                         ))}
@@ -375,7 +436,9 @@ export default function BookingForm({ shop }: BookingFormProps) {
                 <Input
                   id="customerName"
                   value={formData.customerName}
-                  onChange={(e) => handleInputChange("customerName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("customerName", e.target.value)
+                  }
                   placeholder="John Doe"
                   className="border-slate-600 bg-slate-700/50 text-white"
                 />
@@ -387,7 +450,9 @@ export default function BookingForm({ shop }: BookingFormProps) {
                 <Input
                   id="customerPhone"
                   value={formData.customerPhone}
-                  onChange={(e) => handleInputChange("customerPhone", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("customerPhone", e.target.value)
+                  }
                   placeholder="08123456789"
                   className="border-slate-600 bg-slate-700/50 text-white"
                 />
@@ -400,7 +465,9 @@ export default function BookingForm({ shop }: BookingFormProps) {
                   id="customerEmail"
                   type="email"
                   value={formData.customerEmail}
-                  onChange={(e) => handleInputChange("customerEmail", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("customerEmail", e.target.value)
+                  }
                   placeholder="nama@email.com"
                   className="border-slate-600 bg-slate-700/50 text-white"
                 />
@@ -444,7 +511,10 @@ export default function BookingForm({ shop }: BookingFormProps) {
                   <div className="flex justify-between text-slate-300">
                     <span>Tanggal</span>
                     <span className="text-white">
-                      {formData.bookingDate && format(formData.bookingDate, "EEEE, d MMMM yyyy", { locale: id })}
+                      {formData.bookingDate &&
+                        format(formData.bookingDate, "EEEE, d MMMM yyyy", {
+                          locale: id,
+                        })}
                     </span>
                   </div>
                   <div className="flex justify-between text-slate-300">
@@ -462,7 +532,9 @@ export default function BookingForm({ shop }: BookingFormProps) {
                   {formData.customerEmail && (
                     <div className="flex justify-between text-slate-300">
                       <span>Email</span>
-                      <span className="text-white">{formData.customerEmail}</span>
+                      <span className="text-white">
+                        {formData.customerEmail}
+                      </span>
                     </div>
                   )}
                   <div className="border-t border-slate-600 pt-3">
@@ -485,7 +557,7 @@ export default function BookingForm({ shop }: BookingFormProps) {
                 type="button"
                 variant="outline"
                 onClick={handleBack}
-                className="border-slate-600 text-white hover:bg-slate-700"
+                className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600"
               >
                 Kembali
               </Button>

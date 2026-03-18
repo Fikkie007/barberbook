@@ -6,7 +6,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -77,7 +84,9 @@ export default function RegisterPage() {
               />
             </svg>
           </div>
-          <CardTitle className="text-2xl font-bold text-white">Daftar Akun</CardTitle>
+          <CardTitle className="text-2xl font-bold text-white">
+            Daftar Akun
+          </CardTitle>
           <CardDescription className="text-slate-400">
             Buat akun untuk mengelola toko barbershop Anda
           </CardDescription>
@@ -154,7 +163,7 @@ export default function RegisterPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 border-0 bg-transparent pt-12">
             <Button
               type="submit"
               disabled={loading}
@@ -164,7 +173,10 @@ export default function RegisterPage() {
             </Button>
             <p className="text-sm text-slate-400">
               Sudah punya akun?{" "}
-              <Link href="/auth/login" className="text-amber-400 hover:text-amber-300 font-medium">
+              <Link
+                href="/auth/login"
+                className="text-amber-400 hover:text-amber-300 font-medium"
+              >
                 Masuk di sini
               </Link>
             </p>
