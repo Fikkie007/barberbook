@@ -84,8 +84,11 @@ function NavContent({ user, shops }: SidebarProps) {
             Toko Anda
           </p>
           <div className="space-y-1">
-            {shops.map((shop) => {
-              const isShopActive = searchParams.get("shop") === shop.id;
+            {shops.map((shop, index) => {
+              const shopParam = searchParams.get("shop");
+              const isShopActive = shopParam
+                ? shopParam === shop.id
+                : index === 0 && pathname === "/dashboard";
               return (
                 <Link
                   key={shop.id}

@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working in this
 
 BarberBook is a multi-tenant SaaS platform for barbershop online booking. Each shop gets a subdomain (e.g., `myshop.localhost:3000`) for their public booking page. **The app is in Indonesian** - all UI text, WhatsApp messages, and seed data use Bahasa Indonesia.
 
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Database:** PostgreSQL with Prisma ORM (generated client in `src/generated/prisma/`)
+- **Auth:** NextAuth.js v5 (beta) with JWT sessions
+- **UI:** shadcn/ui + Tailwind CSS v4
+- **Forms:** react-hook-form + Zod v4
+- **WhatsApp:** Fonnte API
+
 ## Commands
 
 ```bash
@@ -47,13 +56,21 @@ For local subdomain testing, add to `/etc/hosts`:
 - Custom login page at `/auth/login`
 - Roles: `OWNER` (shop owner), `ADMIN` (platform admin)
 - Session user type extended with `id` and `role` in `src/lib/auth.ts`
+- **Dual protection:** Middleware redirects unauthenticated users from `/dashboard` and `/settings`. Dashboard layout (`src/app/(dashboard)/layout.tsx`) also calls `auth()` and redirects if no session.
 
 ### Database
 
 - PostgreSQL via Prisma ORM
 - Prisma client singleton in `src/lib/prisma.ts` (prevents multiple instances in dev)
+- Generated Prisma types in `src/generated/prisma/`
 - Schema includes: User, Shop, Service, Barber, Booking, WorkingDay
 - Seed file creates demo shop with services/barbers (`prisma/seed.ts`)
+
+**Data conventions:**
+- Prices stored as integers in Rupiah (no decimals)
+- Booking times stored as strings in "HH:mm" format (e.g., "09:00")
+- Working days: `dayOfWeek` uses 0=Sunday, 1=Monday, etc.
+- Phone numbers use Indonesian format (prefix with "62" for WhatsApp)
 
 **Demo accounts after seeding:**
 - Owner: `owner@demo.com` / `password123`
