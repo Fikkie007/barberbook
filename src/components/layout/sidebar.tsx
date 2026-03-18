@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -43,6 +43,7 @@ const navItems = [
 
 function NavContent({ user, shops }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <div className="flex h-full flex-col">
@@ -83,16 +84,26 @@ function NavContent({ user, shops }: SidebarProps) {
             Toko Anda
           </p>
           <div className="space-y-1">
-            {shops.map((shop) => (
-              <Link
-                key={shop.id}
-                href={`/dashboard?shop=${shop.id}`}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50 hover:text-white"
-              >
-                <Store className="h-4 w-4" />
-                {shop.name}
-              </Link>
-            ))}
+            {shops.map((shop, index) => {
+              const shopParam = searchParams.get("shop");
+              const isShopActive = shopParam
+                ? shopParam === shop.id
+                : index === 0 && pathname === "/dashboard";
+              return (
+                <Link
+                  key={shop.id}
+                  href={`/dashboard?shop=${shop.id}`}
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isShopActive
+                      ? "bg-amber-500/10 text-amber-400"
+                      : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                  }`}
+                >
+                  <Store className="h-4 w-4" />
+                  {shop.name}
+                </Link>
+              );
+            })}
           </div>
           <Link href="/dashboard/settings?new=true">
             <Button
@@ -112,7 +123,10 @@ function NavContent({ user, shops }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive =
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}
