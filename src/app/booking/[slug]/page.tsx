@@ -45,10 +45,10 @@ export default async function BookingPage({ params }: BookingPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-slate-800/50">
-        <div className="absolute inset-0 bg-linear-to-r from-amber-500/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent" />
         <div className="relative mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="text-center">
             {shop.logo && (

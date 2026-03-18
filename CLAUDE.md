@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working in this
 
 ## Project Overview
 
-BarberBook is a multi-tenant SaaS platform for barbershop online booking. Each shop gets a subdomain (e.g., `myshop.localhost:3000`) for their public booking page. **The app is in Indonesian language** - all UI text, WhatsApp messages, and seed data use Bahasa Indonesia.
+BarberBook is a multi-tenant SaaS platform for barbershop online booking. Each shop gets a subdomain (e.g., `myshop.localhost:3000`) for their public booking page. **The app is in Indonesian** - all UI text, WhatsApp messages, and seed data use Bahasa Indonesia.
 
 ## Commands
 
@@ -88,7 +88,7 @@ All API routes are in `src/app/api/`:
 - Uses shadcn/ui components in `src/components/ui/`
 - Layout components in `src/components/layout/`
 - Feature components in `src/components/booking/` and `src/components/dashboard/`
-- Form validation with react-hook-form + zod
+- Form validation with react-hook-form + Zod
 
 ## Environment Variables
 

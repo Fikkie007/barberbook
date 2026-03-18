@@ -48,7 +48,7 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
       <header className="border-b border-slate-800">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
@@ -90,7 +90,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden py-20 sm:py-32">
-        <div className="absolute inset-0 bg-linear-to-r from-amber-500/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-transparent" />
         <div className="relative mx-auto max-w-6xl px-4 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
             Platform Booking Online untuk{" "}
