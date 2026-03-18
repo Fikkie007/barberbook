@@ -7,7 +7,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,7 +51,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
       <Card className="w-full max-w-md border-slate-700 bg-slate-800/50 backdrop-blur">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500">
@@ -62,7 +69,9 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <CardTitle className="text-2xl font-bold text-white">BarberBook</CardTitle>
+          <CardTitle className="text-2xl font-bold text-white">
+            BarberBook
+          </CardTitle>
           <CardDescription className="text-slate-400">
             Masuk ke dashboard toko Anda
           </CardDescription>
@@ -101,7 +110,7 @@ export default function LoginPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 border-0 bg-transparent pt-12">
             <Button
               type="submit"
               disabled={loading}
@@ -111,7 +120,10 @@ export default function LoginPage() {
             </Button>
             <p className="text-sm text-slate-400">
               Belum punya akun?{" "}
-              <Link href="/auth/register" className="text-amber-400 hover:text-amber-300 font-medium">
+              <Link
+                href="/auth/register"
+                className="text-amber-400 hover:text-amber-300 font-medium"
+              >
                 Daftar sekarang
               </Link>
             </p>
