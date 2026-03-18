@@ -1,36 +1,180 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BarberBook
+
+Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi WhatsApp otomatis.
+
+## Fitur
+
+- 📅 **Booking Online 24/7** - Pelanggan bisa booking kapan saja
+- 💬 **Notifikasi WhatsApp Otomatis** - Konfirmasi, reminder, dan notifikasi otomatis
+- 🏪 **Multi-tenant** - Setiap toko memiliki subdomain unik
+- 📊 **Dashboard Owner** - Kelola booking, layanan, dan barber
+- 📱 **Mobile Friendly** - Responsif di semua perangkat
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Database:** PostgreSQL dengan Prisma ORM
+- **Auth:** NextAuth.js v5
+- **UI:** shadcn/ui + Tailwind CSS
+- **WhatsApp API:** Fonnte
+
+## Prerequisites
+
+- Node.js 18+
+- PostgreSQL database
+- Fonnte account (untuk WhatsApp notifications)
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone repository
+
+```bash
+git clone https://github.com/yourusername/barberbook.git
+cd barberbook
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Setup environment variables
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` dengan konfigurasi Anda:
+
+```env
+# Database
+DATABASE_URL="postgresql://postgres:password@localhost:5432/barberbook"
+
+# NextAuth.js
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key-here"
+
+# Fonnte WhatsApp API (optional)
+FONNTE_API_KEY="your-fonnte-api-key"
+FONNTE_API_URL="https://api.fonnte.com/send"
+
+# App Config
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_DOMAIN="localhost:3000"
+```
+
+### 4. Setup database
+
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+# (Optional) Seed database dengan demo data
+npx prisma db seed
+```
+
+### 5. Run development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka [http://localhost:3000](http://localhost:3000) di browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Account
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Setelah menjalankan seed, gunakan akun berikut:
 
-## Learn More
+- **Email:** owner@demo.com
+- **Password:** password123
 
-To learn more about Next.js, take a look at the following resources:
+## Multi-tenant Routing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Aplikasi menggunakan subdomain untuk routing multi-tenant:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `localhost:3000` - Landing page
+- `demo-barbershop.localhost:3000` - Halaman booking untuk toko "demo-barbershop"
+- `localhost:3000/dashboard` - Dashboard owner (perlu login)
 
-## Deploy on Vercel
+Untuk testing subdomain di localhost, edit file `/etc/hosts`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+127.0.0.1 demo-barbershop.localhost
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## WhatsApp Integration
+
+1. Daftar di [Fonnte](https://fonnte.com/)
+2. Dapatkan API key dari dashboard
+3. Scan QR code untuk menghubungkan WhatsApp
+4. Tambahkan `FONNTE_API_KEY` ke `.env`
+
+Pesan otomatis akan dikirim saat:
+- Booking baru dibuat (konfirmasi)
+- Status booking diubah ke COMPLETED (terima kasih)
+- Booking dibatalkan (pembatalan)
+
+## Deployment
+
+### Vercel (Recommended)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/barberbook)
+
+1. Push ke GitHub
+2. Import project di Vercel
+3. Add environment variables
+4. Deploy
+
+### Manual
+
+```bash
+npm run build
+npm run start
+```
+
+## Scripts
+
+```bash
+npm run dev          # Development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+
+npx prisma studio    # Open database GUI
+npx prisma migrate dev   # Run migrations
+npx prisma db seed       # Seed database
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── (dashboard)/     # Protected routes
+│   ├── (public)/        # Landing page
+│   ├── api/             # API routes
+│   ├── auth/            # Auth pages
+│   └── booking/         # Public booking pages
+├── components/
+│   ├── ui/              # shadcn/ui components
+│   ├── layout/          # Layout components
+│   ├── dashboard/       # Dashboard components
+│   └── booking/         # Booking components
+├── lib/
+│   ├── auth.ts          # NextAuth config
+│   ├── prisma.ts        # Prisma client
+│   └── whatsapp.ts      # WhatsApp API
+└── types/               # TypeScript types
+```
+
+## License
+
+[MIT](LICENSE)
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first.
