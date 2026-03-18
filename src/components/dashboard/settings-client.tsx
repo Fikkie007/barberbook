@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Save, Store, Link as LinkIcon } from "lucide-react";
 
 interface Shop {
@@ -28,13 +27,20 @@ interface SettingsClientProps {
   isNew?: boolean;
 }
 
-export default function SettingsClient({ userId, initialShops, isNew }: SettingsClientProps) {
+export default function SettingsClient({
+  userId,
+  initialShops,
+  isNew,
+}: SettingsClientProps) {
   const [shops, setShops] = useState<Shop[]>(initialShops);
   const [activeShop, setActiveShop] = useState<Shop | null>(
-    isNew ? null : initialShops[0] || null
+    isNew ? null : initialShops[0] || null,
   );
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -106,7 +112,10 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
         }
         setMessage({ type: "success", text: "Toko berhasil disimpan!" });
       } else {
-        setMessage({ type: "error", text: data.error || "Gagal menyimpan toko" });
+        setMessage({
+          type: "error",
+          text: data.error || "Gagal menyimpan toko",
+        });
       }
     } catch (error) {
       console.error("Failed to save shop:", error);
@@ -135,7 +144,7 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
           <Button
             onClick={handleCreateNew}
             variant="outline"
-            className="border-slate-600 text-white hover:bg-slate-700"
+            className="bg-amber-500 text-slate-900 hover:bg-amber-400"
           >
             <Store className="mr-2 h-4 w-4" />
             Tambah Toko
@@ -207,7 +216,12 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
                   <span className="text-slate-400">...</span>
                   <Input
                     value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.replace(/[^a-z0-9-]/g, "") })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        slug: e.target.value.replace(/[^a-z0-9-]/g, ""),
+                      })
+                    }
                     placeholder="barbershop-jaya"
                     className="border-slate-600 bg-slate-700 text-white"
                     required
@@ -221,7 +235,9 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
               <Label className="text-slate-300">Deskripsi</Label>
               <Textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Deskripsi singkat toko Anda..."
                 className="border-slate-600 bg-slate-700 text-white"
                 rows={2}
@@ -233,7 +249,9 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
                 <Label className="text-slate-300">Nomor Telepon</Label>
                 <Input
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
                   placeholder="08123456789"
                   className="border-slate-600 bg-slate-700 text-white"
                   required
@@ -243,12 +261,16 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
                 <Label className="text-slate-300">Nomor WhatsApp</Label>
                 <Input
                   value={formData.whatsappNumber}
-                  onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, whatsappNumber: e.target.value })
+                  }
                   placeholder="628123456789"
                   className="border-slate-600 bg-slate-700 text-white"
                   required
                 />
-                <p className="text-xs text-slate-400">Format: 628xxx (tanpa +)</p>
+                <p className="text-xs text-slate-400">
+                  Format: 628xxx (tanpa +)
+                </p>
               </div>
             </div>
 
@@ -256,7 +278,9 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
               <Label className="text-slate-300">Alamat</Label>
               <Textarea
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
                 placeholder="Jl. Contoh No. 123, Kota"
                 className="border-slate-600 bg-slate-700 text-white"
                 rows={2}
@@ -270,7 +294,9 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
                 <Input
                   type="time"
                   value={formData.openingTime}
-                  onChange={(e) => setFormData({ ...formData, openingTime: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, openingTime: e.target.value })
+                  }
                   className="border-slate-600 bg-slate-700 text-white"
                   required
                 />
@@ -280,7 +306,9 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
                 <Input
                   type="time"
                   value={formData.closingTime}
-                  onChange={(e) => setFormData({ ...formData, closingTime: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, closingTime: e.target.value })
+                  }
                   className="border-slate-600 bg-slate-700 text-white"
                   required
                 />
@@ -301,7 +329,7 @@ export default function SettingsClient({ userId, initialShops, isNew }: Settings
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="border-slate-600 text-white"
+                    className="bg-amber-500 text-slate-900 hover:bg-amber-400"
                     onClick={() => navigator.clipboard.writeText(bookingUrl)}
                   >
                     Salin
