@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -14,6 +14,7 @@ BarberBook is a multi-tenant SaaS platform for barbershop online booking. Each s
 - **UI:** shadcn/ui + Tailwind CSS v4
 - **Forms:** react-hook-form + Zod v4
 - **WhatsApp:** Fonnte API
+- **Scheduled Jobs:** Upstash QStash (for reminder scheduling)
 
 ## Commands
 
@@ -44,7 +45,10 @@ The middleware (`src/middleware.ts`) handles:
 2. Authentication protection for `/dashboard` routes
 3. Redirecting authenticated users away from auth pages
 
-For local subdomain testing, add to `/etc/hosts`:
+For local subdomain testing:
+- **Linux/Mac:** Add to `/etc/hosts`
+- **Windows:** Add to `C:\Windows\System32\drivers\etc\hosts`
+
 ```
 127.0.0.1 demo-barbershop.localhost
 ```
@@ -64,6 +68,7 @@ For local subdomain testing, add to `/etc/hosts`:
 - Prisma client singleton in `src/lib/prisma.ts` (prevents multiple instances in dev)
 - Generated Prisma types in `src/generated/prisma/`
 - Schema includes: User, Shop, Service, Barber, Booking, WorkingDay
+- Booking model has reminder tracking fields: `reminderSent`, `confirmationSent`, `qstashMessageId`
 - Seed file creates demo shop with services/barbers (`prisma/seed.ts`)
 
 **Data conventions:**
@@ -83,6 +88,7 @@ All API routes are in `src/app/api/`:
 - `auth/[...nextauth]/` - NextAuth handlers
 - `auth/register/` - User registration
 - `bookings/` - CRUD for bookings (public create, owner manage)
+- `bookings/send-reminder/` - QStash webhook for scheduled reminders
 - `services/` - Shop services management
 - `barbers/` - Shop barbers management
 - `shops/` - Shop lookup by slug
@@ -93,6 +99,14 @@ All API routes are in `src/app/api/`:
 - Configuration in `src/lib/whatsapp.ts`
 - Message templates for booking confirmation, reminder, completion, cancellation
 - Falls back to console.log in development (no API key)
+
+### Scheduled Reminders (QStash)
+
+- Uses Upstash QStash for scheduling WhatsApp reminders 24 hours before appointments
+- Configuration in `src/lib/qstash.ts` and `src/lib/qstash-verify.ts`
+- Reminder scheduling endpoint at `/api/bookings/send-reminder`
+- Reminders only scheduled if appointment is more than 24 hours away
+- Falls back gracefully in development (no QStash token)
 
 ### Types
 
@@ -115,5 +129,39 @@ Required in `.env`:
 - `NEXTAUTH_URL` - Base URL (optional in dev)
 - `NEXT_PUBLIC_APP_DOMAIN` - Domain for subdomain routing (e.g., `localhost:3000`)
 - `NEXT_PUBLIC_APP_URL` - Full app URL (e.g., `http://localhost:3000`)
-- `FONNTE_API_KEY` - WhatsApp API key (optional for dev)
-- `FONNTE_API_URL` - WhatsApp API URL (optional)
+
+Optional for WhatsApp notifications:
+- `FONNTE_API_KEY` - WhatsApp API key
+- `FONNTE_API_URL` - WhatsApp API URL
+
+Optional for scheduled reminders:
+- `QSTASH_TOKEN` - Upstash QStash token
+- `QSTASH_CURRENT_SIGNING_KEY` - QStash signing key for webhook verification
+- `QSTASH_NEXT_SIGNING_KEY` - QStash next signing key for key rotation
+
+## Coding Patterns
+
+### Error Handling in External Services
+
+WhatsApp and QStash integrations are designed to fail gracefully:
+- Missing API keys result in console logs, not errors
+- Booking creation succeeds even if notifications fail
+- Always wrap external API calls in try-catch and continue on failure
+
+### Date/Time Formatting
+
+All dates displayed to users use `date-fns` with Indonesian locale:
+```tsx
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+
+format(date, "EEEE, d MMMM yyyy", { locale: id });
+```
+
+### API Response Convention
+
+APIs return JSON with this structure:
+```tsx
+{ success: true, data: {...} }  // Success
+{ error: "Pesan error" }         // Error (in Indonesian)
+```
