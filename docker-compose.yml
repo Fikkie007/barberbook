@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: barberbook-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-barberbook}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-barberbook_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-barberbook}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-barberbook} -d ${POSTGRES_DB:-barberbook}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # BarberBook Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: barberbook-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-barberbook}:${POSTGRES_PASSWORD:-barberbook_secret}@postgres:5432/${POSTGRES_DB:-barberbook}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - NEXT_PUBLIC_APP_DOMAIN=${NEXT_PUBLIC_APP_DOMAIN}
+      - FONNTE_API_KEY=${FONNTE_API_KEY:-}
+      - FONNTE_API_URL=${FONNTE_API_URL:-https://api.fonnte.com/send}
+      - QSTASH_TOKEN=${QSTASH_TOKEN:-}
+      - QSTASH_URL=${QSTASH_URL:-}
+      - QSTASH_CURRENT_SIGNING_KEY=${QSTASH_CURRENT_SIGNING_KEY:-}
+      - QSTASH_NEXT_SIGNING_KEY=${QSTASH_NEXT_SIGNING_KEY:-}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node server.js
+      "
+
+  # Optional: QStash Local for development
+  qstash-local:
+    image: upstash/qstash-local:latest
+    container_name: barberbook-qstash
+    restart: unless-stopped
+    ports:
+      - "${QSTASH_PORT:-4000}:3000"
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: barberbook-network

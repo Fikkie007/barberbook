@@ -6,7 +6,6 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
-  const domain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost:3000";
 
   // Extract subdomain
   const isLocalhost = host.includes("localhost");
@@ -24,9 +23,6 @@ export async function middleware(request: NextRequest) {
   // Public paths that don't require authentication
   const publicPaths = ["/auth/login", "/auth/register", "/api"];
   const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
-
-  // Root path
-  const isRootPath = pathname === "/";
 
   // Handle subdomain requests (public booking pages)
   if (isSubdomain) {

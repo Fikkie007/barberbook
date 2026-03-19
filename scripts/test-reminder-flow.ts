@@ -8,7 +8,7 @@
  * Run: npx tsx scripts/test-reminder-flow.ts
  */
 
-import { Client, Receiver } from "@upstash/qstash";
+import { Client } from "@upstash/qstash";
 import * as dotenv from "dotenv";
 import { resolve } from "path";
 import { PrismaClient } from "@prisma/client";
@@ -19,8 +19,6 @@ const prisma = new PrismaClient();
 
 const QSTASH_URL = process.env.QSTASH_URL;
 const QSTASH_TOKEN = process.env.QSTASH_TOKEN;
-const QSTASH_CURRENT_SIGNING_KEY = process.env.QSTASH_CURRENT_SIGNING_KEY;
-const QSTASH_NEXT_SIGNING_KEY = process.env.QSTASH_NEXT_SIGNING_KEY;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 async function testReminderFlow() {
@@ -46,7 +44,7 @@ async function testReminderFlow() {
     } else {
       console.log("  ⚠️ Dev server responded but may have issues");
     }
-  } catch (e) {
+  } catch {
     console.log("  ❌ Dev server is NOT running!");
     console.log("     Please run: npm run dev");
     return;
@@ -55,7 +53,7 @@ async function testReminderFlow() {
   // Step 2: Find or create test booking
   console.log("\n📝 Step 2: Setting up test data...");
 
-  let shop = await prisma.shop.findFirst({
+  const shop = await prisma.shop.findFirst({
     where: { slug: "demo-barbershop" },
     include: { services: true },
   });

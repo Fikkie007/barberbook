@@ -21,6 +21,11 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 
 ## Prerequisites
 
+### Option A: Docker (Recommended untuk Production)
+- Docker & Docker Compose
+- Fonnte account (untuk WhatsApp notifications)
+
+### Option B: Manual Development
 - Node.js 18+
 - PostgreSQL database
 - Fonnte account (untuk WhatsApp notifications)
@@ -170,6 +175,118 @@ npx tsx scripts/test-qstash.ts
 npm run build
 npm run start
 ```
+
+### Docker
+
+#### Quick Start
+
+```bash
+# 1. Copy environment file
+cp .env.example .env
+
+# 2. Edit .env dengan konfigurasi Anda
+# Penting: Ganti NEXTAUTH_SECRET dan password database
+
+# 3. Build dan jalankan
+docker compose up -d
+
+# 4. Seed database (opsional, untuk demo data)
+docker compose exec app npx prisma db seed
+```
+
+Aplikasi akan berjalan di `http://localhost:3000`
+
+#### Docker Commands
+
+```bash
+# Start services
+docker compose up -d
+
+# View logs
+docker compose logs -f app
+
+# Stop services
+docker compose down
+
+# Stop dan hapus volumes (reset database)
+docker compose down -v
+
+# Rebuild setelah code changes
+docker compose up -d --build
+```
+
+#### Development dengan QStash Local
+
+```bash
+# Jalankan dengan QStash local
+docker compose --profile dev up -d
+```
+
+#### Environment Variables untuk Docker
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_USER` | barberbook | Database username |
+| `POSTGRES_PASSWORD` | barberbook_secret | Database password |
+| `POSTGRES_DB` | barberbook | Database name |
+| `POSTGRES_PORT` | 5432 | Database port |
+| `APP_PORT` | 3000 | Application port |
+| `QSTASH_PORT` | 4000 | QStash local port (dev only) |
+
+#### Production Deployment
+
+Untuk production, gunakan `docker-compose.prod.yml` yang menggunakan image dari GHCR:
+
+```bash
+# Set image tag (opsional, default: ghcr.io/azkadev/barberbook:latest)
+export DOCKER_IMAGE=ghcr.io/yourusername/barberbook:latest
+
+# Jalankan dengan production compose
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**Catatan:** File `docker-compose.yml` digunakan untuk local development dengan build lokal, sedangkan `docker-compose.prod.yml` menggunakan image dari registry untuk deployment.
+
+### CI/CD (GitHub Actions)
+
+Project ini menggunakan GitHub Actions untuk CI/CD otomatis.
+
+#### Workflows
+
+| Workflow | Trigger | Deskripsi |
+|----------|---------|-----------|
+| `ci.yml` | Push/PR ke main/master | Lint & build validation |
+| `deploy.yml` | Push ke main/master | Build Docker image & deploy |
+
+#### Setup Deploy ke Server
+
+1. **Generate SSH Key** untuk deploy:
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions" -f deploy_key
+   ```
+
+2. **Tambahkan Secrets** di GitHub repository settings:
+   - `DEPLOY_HOST` - IP atau hostname server
+   - `DEPLOY_USER` - SSH user (e.g., `root` atau `ubuntu`)
+   - `DEPLOY_KEY` - Private key yang di-generate
+   - `DEPLOY_PATH` - Path ke project directory di server
+   - `GHCR_TOKEN` - GitHub Personal Access Token dengan `read:packages` scope (untuk pull image di server)
+
+3. **Setup server**:
+   ```bash
+   # Di server, clone repository
+   git clone https://github.com/yourusername/barberbook.git /opt/barberbook
+   cd /opt/barberbook
+
+   # Copy .env dan edit
+   cp .env.example .env
+   nano .env
+
+   # Add public key ke authorized_keys
+   cat deploy_key.pub >> ~/.ssh/authorized_keys
+   ```
+
+4. **Deploy otomatis** akan berjalan setiap push ke `main` atau `master` branch.
 
 ## Scripts
 
