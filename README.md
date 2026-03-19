@@ -160,133 +160,399 @@ npx tsx scripts/test-qstash.ts
 
 ## Deployment
 
-### Vercel (Recommended)
+### Deploy ke VPS dengan Docker (Step by Step)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/barberbook)
+Panduan lengkap untuk deploy BarberBook ke VPS Anda.
 
-1. Push ke GitHub
-2. Import project di Vercel
-3. Add environment variables
-4. Deploy
+---
 
-### Manual
+#### Step 1: Persiapan VPS
+
+SSH ke VPS Anda dan install Docker:
 
 ```bash
-npm run build
-npm run start
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+
+# Add user ke docker group (agar bisa jalankan tanpa sudo)
+sudo usermod -aG docker $USER
+
+# Logout dan login ulang, lalu verifikasi
+docker --version
+docker compose version
 ```
 
-### Docker
+---
 
-#### Quick Start
+#### Step 2: Setup Domain & DNS
+
+1. Point domain Anda ke IP VPS:
+   - `yourdomain.com` → A record → IP VPS
+   - `*.yourdomain.com` → A record → IP VPS (untuk subdomain multi-tenant)
+
+2. Opsional: Setup subdomain untuk testing:
+   - `demo.yourdomain.com` → A record → IP VPS
+
+---
+
+#### Step 3: Clone Repository di VPS
 
 ```bash
-# 1. Copy environment file
+# Buat directory
+mkdir -p /opt/barberbook
+cd /opt/barberbook
+
+# Clone repository
+git clone https://github.com/YOUR_USERNAME/barberbook.git .
+
+# Atau jika private repo:
+git clone https://YOUR_TOKEN@github.com/YOUR_USERNAME/barberbook.git .
+```
+
+---
+
+#### Step 4: Setup Environment Variables
+
+```bash
+cd /opt/barberbook
+
+# Copy template
 cp .env.example .env
 
-# 2. Edit .env dengan konfigurasi Anda
-# Penting: Ganti NEXTAUTH_SECRET dan password database
+# Edit file
+nano .env
+```
 
-# 3. Build dan jalankan
-docker compose up -d
+Isi dengan konfigurasi production Anda:
 
-# 4. Seed database (opsional, untuk demo data)
+```env
+# Database (akan di-override oleh docker-compose)
+DATABASE_URL="postgresql://barberbook:YOUR_DB_PASSWORD@postgres:5432/barberbook"
+
+# NextAuth.js - GANTI DENGAN SECRET YANG AMAN!
+NEXTAUTH_URL="https://yourdomain.com"
+NEXTAUTH_SECRET="generate-dengan-openssl-rand-base64-32"
+
+# Fonnte WhatsApp API
+FONNTE_API_KEY="your-fonnte-api-key"
+FONNTE_API_URL="https://api.fonnte.com/send"
+
+# Upstash QStash (untuk scheduled reminders)
+QSTASH_URL="https://qstash.upstash.io"
+QSTASH_TOKEN="your-qstash-token"
+QSTASH_CURRENT_SIGNING_KEY="your-current-signing-key"
+QSTASH_NEXT_SIGNING_KEY="your-next-signing-key"
+
+# App Config
+NEXT_PUBLIC_APP_URL="https://yourdomain.com"
+NEXT_PUBLIC_APP_DOMAIN="yourdomain.com"
+```
+
+Generate secret yang aman:
+
+```bash
+openssl rand -base64 32
+```
+
+Juga buat file `.env` untuk docker-compose:
+
+```bash
+nano .env.docker
+```
+
+```env
+# Database credentials
+POSTGRES_USER=barberbook
+POSTGRES_PASSWORD=YOUR_STRONG_PASSWORD_HERE
+POSTGRES_DB=barberbook
+
+# Ports
+APP_PORT=3000
+POSTGRES_PORT=5432
+```
+
+---
+
+#### Step 5: Jalankan dengan Docker Compose
+
+**Option A: Build Local (untuk testing pertama kali)**
+
+```bash
+cd /opt/barberbook
+
+# Build dan jalankan
+docker compose up -d --build
+
+# Lihat logs
+docker compose logs -f
+
+# Jalankan migration
+docker compose exec app npx prisma migrate deploy
+
+# Seed database (opsional)
 docker compose exec app npx prisma db seed
 ```
 
-Aplikasi akan berjalan di `http://localhost:3000`
-
-#### Docker Commands
+**Option B: Gunakan Image dari GHCR (untuk production)**
 
 ```bash
-# Start services
-docker compose up -d
+# Login ke GHCR
+echo YOUR_GHCR_TOKEN | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
 
-# View logs
-docker compose logs -f app
-
-# Stop services
-docker compose down
-
-# Stop dan hapus volumes (reset database)
-docker compose down -v
-
-# Rebuild setelah code changes
-docker compose up -d --build
-```
-
-#### Development dengan QStash Local
-
-```bash
-# Jalankan dengan QStash local
-docker compose --profile dev up -d
-```
-
-#### Environment Variables untuk Docker
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `POSTGRES_USER` | barberbook | Database username |
-| `POSTGRES_PASSWORD` | barberbook_secret | Database password |
-| `POSTGRES_DB` | barberbook | Database name |
-| `POSTGRES_PORT` | 5432 | Database port |
-| `APP_PORT` | 3000 | Application port |
-| `QSTASH_PORT` | 4000 | QStash local port (dev only) |
-
-#### Production Deployment
-
-Untuk production, gunakan `docker-compose.prod.yml` yang menggunakan image dari GHCR:
-
-```bash
-# Set image tag (opsional, default: ghcr.io/azkadev/barberbook:latest)
-export DOCKER_IMAGE=ghcr.io/yourusername/barberbook:latest
+# Set image
+export DOCKER_IMAGE=ghcr.io/YOUR_USERNAME/barberbook:latest
 
 # Jalankan dengan production compose
 docker compose -f docker-compose.prod.yml up -d
+
+# Jalankan migration
+docker compose exec app npx prisma migrate deploy
 ```
 
-**Catatan:** File `docker-compose.yml` digunakan untuk local development dengan build lokal, sedangkan `docker-compose.prod.yml` menggunakan image dari registry untuk deployment.
+---
 
-### CI/CD (GitHub Actions)
+#### Step 6: Setup Reverse Proxy (Nginx)
 
-Project ini menggunakan GitHub Actions untuk CI/CD otomatis.
+Install Nginx:
 
-#### Workflows
+```bash
+sudo apt install nginx -y
+```
 
-| Workflow | Trigger | Deskripsi |
-|----------|---------|-----------|
-| `ci.yml` | Push/PR ke main/master | Lint & build validation |
-| `deploy.yml` | Push ke main/master | Build Docker image & deploy |
+Buat konfigurasi Nginx:
 
-#### Setup Deploy ke Server
+```bash
+sudo nano /etc/nginx/sites-available/barberbook
+```
 
-1. **Generate SSH Key** untuk deploy:
-   ```bash
-   ssh-keygen -t ed25519 -C "github-actions" -f deploy_key
-   ```
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com *.yourdomain.com;
 
-2. **Tambahkan Secrets** di GitHub repository settings:
-   - `DEPLOY_HOST` - IP atau hostname server
-   - `DEPLOY_USER` - SSH user (e.g., `root` atau `ubuntu`)
-   - `DEPLOY_KEY` - Private key yang di-generate
-   - `DEPLOY_PATH` - Path ke project directory di server
-   - `GHCR_TOKEN` - GitHub Personal Access Token dengan `read:packages` scope (untuk pull image di server)
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
 
-3. **Setup server**:
-   ```bash
-   # Di server, clone repository
-   git clone https://github.com/yourusername/barberbook.git /opt/barberbook
-   cd /opt/barberbook
+Enable site dan restart Nginx:
 
-   # Copy .env dan edit
-   cp .env.example .env
-   nano .env
+```bash
+sudo ln -s /etc/nginx/sites-available/barberbook /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
 
-   # Add public key ke authorized_keys
-   cat deploy_key.pub >> ~/.ssh/authorized_keys
-   ```
+---
 
-4. **Deploy otomatis** akan berjalan setiap push ke `main` atau `master` branch.
+#### Step 7: Setup SSL dengan Let's Encrypt
+
+```bash
+# Install Certbot
+sudo apt install certbot python3-certbot-nginx -y
+
+# Generate SSL certificate
+sudo certbot --nginx -d yourdomain.com -d "*.yourdomain.com"
+
+# Certbot akan otomatis modify konfigurasi nginx
+# Pilih option 2 untuk redirect HTTP ke HTTPS
+```
+
+Auto-renewal test:
+
+```bash
+sudo certbot renew --dry-run
+```
+
+---
+
+#### Step 8: Verifikasi Deployment
+
+```bash
+# Cek status container
+docker compose ps
+
+# Cek logs jika ada error
+docker compose logs -f app
+
+# Test akses
+curl https://yourdomain.com
+```
+
+Buka `https://yourdomain.com` di browser.
+
+---
+
+#### Step 9: Setup Auto-Deploy dengan GitHub Actions
+
+Untuk deploy otomatis setiap push ke `main` branch:
+
+**9.1 Generate SSH Key untuk Deploy**
+
+Di komputer lokal:
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f deploy_key
+```
+
+Ini akan membuat:
+- `deploy_key` (private key)
+- `deploy_key.pub` (public key)
+
+**9.2 Copy Public Key ke VPS**
+
+```bash
+# Di VPS, tambahkan public key ke authorized_keys
+echo "CONTENTS_OF_deploy_key.pub" >> ~/.ssh/authorized_keys
+```
+
+Atau copy manual:
+
+```bash
+# Di komputer lokal
+cat deploy_key.pub
+
+# Di VPS
+nano ~/.ssh/authorized_keys
+# Paste public key di baris baru
+```
+
+**9.3 Buat GitHub Personal Access Token (PAT)**
+
+1. Buka https://github.com/settings/tokens
+2. Klik "Generate new token (classic)"
+3. Centang scopes:
+   - `read:packages` - untuk pull dari GHCR
+   - `write:packages` - untuk push ke GHCR
+4. Copy token yang di-generate
+
+**9.4 Tambahkan Secrets di GitHub Repository**
+
+Buka repository Anda → Settings → Secrets and variables → Actions
+
+Tambahkan secrets berikut:
+
+| Secret Name | Value |
+|-------------|-------|
+| `DEPLOY_HOST` | IP address atau domain VPS Anda (e.g., `123.45.67.89` atau `yourdomain.com`) |
+| `DEPLOY_USER` | SSH user (e.g., `root` atau `ubuntu`) |
+| `DEPLOY_KEY` | Isi dari file `deploy_key` (private key) |
+| `DEPLOY_PATH` | `/opt/barberbook` |
+| `GHCR_TOKEN` | GitHub PAT yang dibuat di step 9.3 |
+
+**9.5 Edit docker-compose.prod.yml**
+
+Update image default di `docker-compose.prod.yml`:
+
+```yaml
+app:
+  image: ${DOCKER_IMAGE:-ghcr.io/YOUR_USERNAME/barberbook:latest}
+```
+
+Ganti `YOUR_USERNAME` dengan GitHub username Anda.
+
+**9.6 Commit dan Push**
+
+```bash
+git add .
+git commit -m "chore: setup auto-deploy"
+git push origin main
+```
+
+GitHub Actions akan otomatis:
+1. Run lint dan build (CI)
+2. Build Docker image dan push ke GHCR
+3. Deploy ke VPS via SSH
+
+---
+
+#### Command Berguna untuk Maintenance
+
+```bash
+# View logs
+docker compose logs -f app
+
+# Restart application
+docker compose restart app
+
+# Pull latest image dan restart
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+
+# Run migration manual
+docker compose exec app npx prisma migrate deploy
+
+# Backup database
+docker compose exec postgres pg_dump -U barberbook barberbook > backup.sql
+
+# Restore database
+cat backup.sql | docker compose exec -T postgres psql -U barberbook barberbook
+
+# Check container status
+docker compose ps
+
+# View resource usage
+docker stats
+```
+
+---
+
+#### Troubleshooting
+
+**Container tidak bisa start:**
+```bash
+# Check logs
+docker compose logs app
+
+# Common issues:
+# - Database belum ready: tunggu beberapa detik
+# - Migration gagal: jalankan manual
+docker compose exec app npx prisma migrate deploy
+```
+
+**Database connection error:**
+```bash
+# Check database container
+docker compose logs postgres
+
+# Verify database is running
+docker compose exec postgres pg_isready -U barberbook
+```
+
+**SSL Certificate error:**
+```bash
+# Renew certificate
+sudo certbot renew
+
+# Check nginx config
+sudo nginx -t
+```
+
+**Permission denied pada SSH deploy:**
+```bash
+# Di VPS, check permissions
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+
+# Pastikan public key sudah ditambahkan
+cat ~/.ssh/authorized_keys
+```
+
+---
+
+### Vercel (Alternative)
 
 ## Scripts
 
