@@ -17,6 +17,7 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 - **Auth:** NextAuth.js v5
 - **UI:** shadcn/ui + Tailwind CSS
 - **WhatsApp API:** Fonnte
+- **Scheduled Jobs:** Upstash QStash
 
 ## Prerequisites
 
@@ -58,6 +59,12 @@ NEXTAUTH_SECRET="your-secret-key-here"
 # Fonnte WhatsApp API (optional)
 FONNTE_API_KEY="your-fonnte-api-key"
 FONNTE_API_URL="https://api.fonnte.com/send"
+
+# Upstash QStash (optional - untuk scheduled reminders)
+QSTASH_URL="https://qstash.upstash.io"
+QSTASH_TOKEN="your-qstash-token"
+QSTASH_CURRENT_SIGNING_KEY="your-signing-key"
+QSTASH_NEXT_SIGNING_KEY="your-next-signing-key"
 
 # App Config
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
@@ -117,6 +124,34 @@ Pesan otomatis akan dikirim saat:
 - Booking baru dibuat (konfirmasi)
 - Status booking diubah ke COMPLETED (terima kasih)
 - Booking dibatalkan (pembatalan)
+- 24 jam sebelum appointment (reminder) - memerlukan QStash
+
+## Scheduled Reminders (QStash)
+
+Aplikasi menggunakan Upstash QStash untuk menjadwalkan pengingat WhatsApp 24 jam sebelum appointment.
+
+### Setup Upstash QStash
+
+1. Daftar di [Upstash Console](https://console.upstash.com/)
+2. Buat QStash instance
+3. Copy token dan signing keys ke `.env`
+
+### Local Development dengan QStash Local
+
+```bash
+# Jalankan QStash local dengan Docker
+docker run -d -p 4000:3000 upstash/qstash-local
+
+# Set environment variables
+QSTASH_URL="http://localhost:4000"
+QSTASH_TOKEN="any-token-works-locally"
+```
+
+### Test QStash Configuration
+
+```bash
+npx tsx scripts/test-qstash.ts
+```
 
 ## Deployment
 
@@ -147,6 +182,7 @@ npm run lint         # Run ESLint
 npx prisma studio    # Open database GUI
 npx prisma migrate dev   # Run migrations
 npx prisma db seed       # Seed database
+npx tsx scripts/test-qstash.ts  # Test QStash configuration
 ```
 
 ## Project Structure
@@ -167,7 +203,11 @@ src/
 ├── lib/
 │   ├── auth.ts          # NextAuth config
 │   ├── prisma.ts        # Prisma client
-│   └── whatsapp.ts      # WhatsApp API
+│   ├── whatsapp.ts      # WhatsApp API
+│   ├── qstash.ts        # QStash client
+│   └── qstash-verify.ts # QStash webhook verification
+├── scripts/
+│   └── test-qstash.ts   # QStash test script
 └── types/               # TypeScript types
 ```
 

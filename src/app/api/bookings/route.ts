@@ -4,6 +4,7 @@ import {
   sendWhatsAppMessage,
   generateBookingConfirmationMessage,
 } from "@/lib/whatsapp";
+import { scheduleBookingReminder, calculateReminderTime } from "@/lib/qstash";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -116,6 +117,35 @@ export async function POST(request: NextRequest) {
     } catch (waError) {
       console.error("WhatsApp notification failed:", waError);
       // Continue even if WhatsApp fails
+    }
+
+    // Schedule WhatsApp reminder 24 hours before appointment
+    try {
+      const reminderTime = calculateReminderTime(
+        booking.bookingDate,
+        booking.bookingTime
+      );
+
+      if (reminderTime) {
+        const qstashMessageId = await scheduleBookingReminder(
+          booking.id,
+          reminderTime
+        );
+
+        if (qstashMessageId) {
+          await prisma.booking.update({
+            where: { id: booking.id },
+            data: { qstashMessageId },
+          });
+        }
+      } else {
+        console.log(
+          `[QStash] Booking ${booking.id} is less than 24 hours away - no reminder scheduled`
+        );
+      }
+    } catch (qstashError) {
+      console.error("[QStash] Failed to schedule reminder:", qstashError);
+      // Continue - don't fail booking creation if scheduling fails
     }
 
     return NextResponse.json({
