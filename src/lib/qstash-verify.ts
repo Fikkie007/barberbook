@@ -16,13 +16,22 @@ export async function verifyQStashSignature(
   body: string
 ): Promise<boolean> {
   // Skip verification in development if keys not configured
+  // NEVER skip in production - misconfigured keys will cause verification to fail
   if (!process.env.QSTASH_CURRENT_SIGNING_KEY) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[QStash] Missing signing key in production - verification will fail");
+      return false;
+    }
     console.warn("[DEV] QStash signature verification skipped - keys not configured");
     return true;
   }
 
-  // TEMPORARY: Skip verification for local QStash testing
+  // Skip verification for local QStash testing (only in non-production)
   if (process.env.QSTASH_URL?.includes("localhost")) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[QStash] localhost URL detected in production - verification will fail");
+      return false;
+    }
     console.warn("[DEV] QStash signature verification skipped - local QStash");
     return true;
   }

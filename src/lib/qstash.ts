@@ -23,8 +23,14 @@ export async function scheduleBookingReminder(
     return null;
   }
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    console.error("[QStash] NEXT_PUBLIC_APP_URL not configured - cannot schedule reminder");
+    return null;
+  }
+
   try {
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/bookings/send-reminder`;
+    const callbackUrl = `${appUrl}/api/bookings/send-reminder`;
 
     const result = await qstashClient.publishJSON({
       url: callbackUrl,
@@ -53,7 +59,19 @@ export function calculateReminderTime(
   bookingTime: string
 ): number | null {
   // Parse booking time (format: "HH:mm")
-  const [hours, minutes] = bookingTime.split(":").map(Number);
+  const parts = bookingTime.split(":");
+  if (parts.length !== 2) {
+    console.log(`[QStash] Invalid booking time format: ${bookingTime}`);
+    return null;
+  }
+
+  const [hours, minutes] = parts.map(Number);
+
+  // Validate parsed values
+  if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    console.log(`[QStash] Invalid booking time values: ${bookingTime}`);
+    return null;
+  }
 
   // Create appointment datetime
   const appointmentDate = new Date(bookingDate);

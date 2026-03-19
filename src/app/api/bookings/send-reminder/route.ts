@@ -10,7 +10,19 @@ export async function POST(request: NextRequest) {
   try {
     // Get request body as text for signature verification
     const body = await request.text();
-    const { bookingId } = JSON.parse(body);
+
+    // Parse JSON with proper error handling
+    let bookingId: string;
+    try {
+      const parsed = JSON.parse(body);
+      bookingId = parsed.bookingId;
+    } catch {
+      console.error("[QStash] Invalid JSON payload");
+      return NextResponse.json(
+        { error: "Invalid JSON payload" },
+        { status: 400 }
+      );
+    }
 
     // Verify QStash signature
     const signature = request.headers.get("upstash-signature");
