@@ -3,7 +3,7 @@
  * Run: node scripts/test-qstash.ts
  */
 
-import { Client, Receiver } from "@upstash/qstash";
+import { Client } from "@upstash/qstash";
 import * as dotenv from "dotenv";
 import { resolve } from "path";
 
@@ -66,14 +66,8 @@ async function testQStash() {
     if (!QSTASH_CURRENT_SIGNING_KEY) {
       console.log("  ⚠️  Signing keys not set, skipping verification test");
     } else {
-      const receiver = new Receiver({
-        currentSigningKey: QSTASH_CURRENT_SIGNING_KEY,
-        nextSigningKey: QSTASH_NEXT_SIGNING_KEY || "",
-      });
-
-      // Simulate a signature verification
-      const testBody = JSON.stringify(testPayload);
-      console.log("  ✅ Receiver initialized successfully");
+      // Receiver would be used for webhook signature verification
+      console.log("  ✅ Signing keys configured");
       console.log("  ℹ️  Signature verification works when QStash calls your webhook");
     }
 
@@ -85,7 +79,7 @@ async function testQStash() {
       const messages = await client.messages.listMessages();
       console.log(`  ✅ Connected to QStash`);
       console.log(`  📨 Pending messages: ${messages.length}`);
-    } catch (e) {
+    } catch {
       // Some local QStash implementations might not support all APIs
       console.log(`  ℹ️  Could not fetch messages (this is OK for local QStash)`);
     }

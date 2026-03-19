@@ -63,12 +63,12 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           }}
           labelStyle={{ color: "#fff" }}
           itemStyle={{ color: "#94a3b8" }}
-          formatter={(value) => {
+          formatter={(value, name) => {
             const numValue = typeof value === "number" ? value : 0;
-            const name = arguments[1] as string;
+            const nameStr = String(name);
             return [
-              name === "revenue" ? formatCurrency(numValue) : numValue,
-              name === "revenue" ? "Pendapatan" : "Booking",
+              nameStr === "revenue" ? formatCurrency(numValue) : numValue,
+              nameStr === "revenue" ? "Pendapatan" : "Booking",
             ];
           }}
         />
