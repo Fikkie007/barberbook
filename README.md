@@ -233,6 +233,20 @@ docker compose --profile dev up -d
 | `APP_PORT` | 3000 | Application port |
 | `QSTASH_PORT` | 4000 | QStash local port (dev only) |
 
+#### Production Deployment
+
+Untuk production, gunakan `docker-compose.prod.yml` yang menggunakan image dari GHCR:
+
+```bash
+# Set image tag (opsional, default: ghcr.io/azkadev/barberbook:latest)
+export DOCKER_IMAGE=ghcr.io/yourusername/barberbook:latest
+
+# Jalankan dengan production compose
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**Catatan:** File `docker-compose.yml` digunakan untuk local development dengan build lokal, sedangkan `docker-compose.prod.yml` menggunakan image dari registry untuk deployment.
+
 ### CI/CD (GitHub Actions)
 
 Project ini menggunakan GitHub Actions untuk CI/CD otomatis.
@@ -256,6 +270,7 @@ Project ini menggunakan GitHub Actions untuk CI/CD otomatis.
    - `DEPLOY_USER` - SSH user (e.g., `root` atau `ubuntu`)
    - `DEPLOY_KEY` - Private key yang di-generate
    - `DEPLOY_PATH` - Path ke project directory di server
+   - `GHCR_TOKEN` - GitHub Personal Access Token dengan `read:packages` scope (untuk pull image di server)
 
 3. **Setup server**:
    ```bash
