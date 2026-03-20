@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # PostgreSQL Database
   postgres:
@@ -46,7 +44,7 @@ services:
       - "${APP_PORT:-3000}:3000"
     command: >
       sh -c "
-        npx prisma migrate deploy &&
+        prisma migrate deploy &&
         node server.js
       "
 
