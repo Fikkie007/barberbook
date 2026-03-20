@@ -18,10 +18,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # BarberBook Application (production image from GHCR)
-  # Override DOCKER_IMAGE env var if using a different registry/repo
-  app:
-    image: ${DOCKER_IMAGE:-ghcr.io/yourusername/barberbook:latest}
+  # BarberBook Application
+# Pulls prebuilt image from registry. Use docker-compose.yml for local builds.
+app:
+    image: ${DOCKER_IMAGE:-barberbook:latest}
     container_name: barberbook-app
     restart: unless-stopped
     depends_on:
