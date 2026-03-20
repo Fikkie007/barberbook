@@ -19,11 +19,8 @@ services:
       retries: 5
 
   # BarberBook Application
-  # Builds locally by default. Set DOCKER_IMAGE to pull from registry instead.
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+# Pulls prebuilt image from registry. Use docker-compose.yml for local builds.
+app:
     image: ${DOCKER_IMAGE:-barberbook:latest}
     container_name: barberbook-app
     restart: unless-stopped
