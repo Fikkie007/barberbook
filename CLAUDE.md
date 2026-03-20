@@ -28,6 +28,16 @@ npx prisma migrate dev   # Run database migrations
 npx prisma db seed       # Seed database with demo data
 npx prisma studio        # Open Prisma database GUI
 npx prisma generate      # Generate Prisma client
+
+npx tsx scripts/test-qstash.ts  # Test QStash configuration
+```
+
+### Docker Commands
+
+```bash
+docker compose up -d                    # Start app with PostgreSQL
+docker compose --profile dev up -d      # Start with QStash local for dev
+docker compose -f docker-compose.prod.yml up -d  # Production deployment
 ```
 
 ## Architecture
@@ -108,6 +118,12 @@ All API routes are in `src/app/api/`:
 - Reminders only scheduled if appointment is more than 24 hours away
 - Falls back gracefully in development (no QStash token)
 
+**Local QStash testing:**
+```bash
+docker run -d -p 4000:3000 upstash/qstash-local
+# Set QSTASH_URL=http://localhost:4000 in .env
+```
+
 ### Types
 
 - All types centralized in `src/types/index.ts`
@@ -135,6 +151,7 @@ Optional for WhatsApp notifications:
 - `FONNTE_API_URL` - WhatsApp API URL
 
 Optional for scheduled reminders:
+- `QSTASH_URL` - QStash endpoint (defaults to Upstash, use `http://localhost:4000` for local QStash)
 - `QSTASH_TOKEN` - Upstash QStash token
 - `QSTASH_CURRENT_SIGNING_KEY` - QStash signing key for webhook verification
 - `QSTASH_NEXT_SIGNING_KEY` - QStash next signing key for key rotation
@@ -165,3 +182,11 @@ APIs return JSON with this structure:
 { success: true, data: {...} }  // Success
 { error: "Pesan error" }         // Error (in Indonesian)
 ```
+
+## Deployment
+
+- Next.js configured with `output: "standalone"` for Docker deployment
+- CI/CD via GitHub Actions (`.github/workflows/`):
+  - `ci.yml` - Runs on all PRs (lint, build)
+  - `deploy.yml` - Builds Docker image, pushes to ghcr.io, deploys via SSH on merge to master/main
+- Production uses `docker-compose.prod.yml`
