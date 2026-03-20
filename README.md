@@ -289,11 +289,11 @@ docker compose up -d --build
 # Lihat logs
 docker compose logs -f
 
-# Jalankan migration
-docker compose exec app npx prisma migrate deploy
+# Run migration
+docker compose exec app prisma migrate deploy
 
 # Seed database (opsional)
-docker compose exec app npx prisma db seed
+docker compose exec app prisma db seed
 ```
 
 **Option B: Gunakan Image dari GHCR (untuk production)**
@@ -309,7 +309,7 @@ export DOCKER_IMAGE=ghcr.io/YOUR_USERNAME/barberbook:latest
 docker compose -f docker-compose.prod.yml up -d
 
 # Jalankan migration
-docker compose exec app npx prisma migrate deploy
+docker compose exec app prisma migrate deploy
 ```
 
 ---
@@ -492,7 +492,7 @@ docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 
 # Run migration manual
-docker compose exec app npx prisma migrate deploy
+docker compose exec app prisma migrate deploy
 
 # Backup database
 docker compose exec postgres pg_dump -U barberbook barberbook > backup.sql
@@ -519,7 +519,7 @@ docker compose logs app
 # Common issues:
 # - Database belum ready: tunggu beberapa detik
 # - Migration gagal: jalankan manual
-docker compose exec app npx prisma migrate deploy
+docker compose exec app prisma migrate deploy
 ```
 
 **Database connection error:**
