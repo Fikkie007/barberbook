@@ -42,6 +42,9 @@ RUN adduser --system --uid 1001 nextjs
 # Install Prisma CLI globally for running migrations (pinned to match package.json version)
 RUN npm install -g prisma@6.19.2
 
+# Install Prisma CLI globally for running migrations
+RUN npm install -g prisma
+
 # Copy necessary files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
