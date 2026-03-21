@@ -7,12 +7,23 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
-  // Extract subdomain
-  const isLocalhost = host.includes("localhost");
-  const hostParts = host.split(".");
-  const isSubdomain =
-    (isLocalhost && hostParts.length > 1 && hostParts[0] !== "www") ||
-    (!isLocalhost && hostParts.length > 2 && hostParts[0] !== "www");
+  // Get base domain from env (e.g., "barberbook.my.id" or "localhost:3000")
+  const baseDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost:3000";
+  const baseDomainWithoutPort = baseDomain.split(":")[0];
+  const hostWithoutPort = host.split(":")[0];
+
+  // Check if this is the base domain or www version
+  const isBaseDomain =
+    hostWithoutPort === baseDomainWithoutPort ||
+    hostWithoutPort === `www.${baseDomainWithoutPort}`;
+
+  // Check if host ends with base domain (to prevent cross-domain false positives)
+  const isUnderBaseDomain =
+    hostWithoutPort === baseDomainWithoutPort ||
+    hostWithoutPort.endsWith(`.${baseDomainWithoutPort}`);
+
+  // Extract subdomain - it's a subdomain if it's under base domain but not the base itself
+  const isSubdomain = isUnderBaseDomain && !isBaseDomain;
 
   // Get token for auth check
   const token = await getToken({
@@ -26,7 +37,8 @@ export async function middleware(request: NextRequest) {
 
   // Handle subdomain requests (public booking pages)
   if (isSubdomain) {
-    const subdomain = isLocalhost ? hostParts[0] : hostParts[0];
+    // Extract subdomain (e.g., "myshop" from "myshop.barberbook.my.id")
+    const subdomain = hostWithoutPort.replace(`.${baseDomainWithoutPort}`, "");
 
     // Skip static files and api
     if (
