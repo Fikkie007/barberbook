@@ -19,8 +19,8 @@ services:
       retries: 5
 
   # BarberBook Application
-# Pulls prebuilt image from registry. Use docker-compose.yml for local builds.
-app:
+  # Pulls prebuilt image from registry. Use docker-compose.yml for local builds.
+  app:
     image: ${DOCKER_IMAGE:-barberbook:latest}
     container_name: barberbook-app
     restart: unless-stopped
