@@ -452,18 +452,7 @@ Tambahkan secrets berikut:
 | `DEPLOY_PATH` | `/opt/barberbook` |
 | `GHCR_TOKEN` | GitHub PAT yang dibuat di step 9.3 |
 
-**9.5 Edit docker-compose.prod.yml**
-
-Update image default di `docker-compose.prod.yml`:
-
-```yaml
-app:
-  image: ${DOCKER_IMAGE:-ghcr.io/YOUR_USERNAME/barberbook:latest}
-```
-
-Ganti `YOUR_USERNAME` dengan GitHub username Anda.
-
-**9.6 Commit dan Push**
+**9.5 Commit dan Push**
 
 ```bash
 git add .
@@ -475,6 +464,8 @@ GitHub Actions akan otomatis:
 1. Run lint dan build (CI)
 2. Build Docker image dan push ke GHCR
 3. Deploy ke VPS via SSH
+
+**Catatan:** Image Docker akan otomatis menggunakan format `ghcr.io/USERNAME/REPO:latest` berdasarkan nama repository Anda. Tidak perlu edit manual di `docker-compose.prod.yml`.
 
 ---
 
