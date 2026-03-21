@@ -78,7 +78,7 @@ For local subdomain testing:
 - Prisma client singleton in `src/lib/prisma.ts` (prevents multiple instances in dev)
 - Generated Prisma types in `src/generated/prisma/`
 - Schema includes: User, Shop, Service, Barber, Booking, WorkingDay
-- Booking model has reminder tracking fields: `reminderSent`, `confirmationSent`, `qstashMessageId`
+- Booking model has reminder tracking fields: `whatsappSent`, `confirmationSent`, `reminderSent`, `qstashMessageId`
 - Seed file creates demo shop with services/barbers (`prisma/seed.ts`)
 
 **Data conventions:**
