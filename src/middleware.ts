@@ -17,10 +17,13 @@ export async function middleware(request: NextRequest) {
     hostWithoutPort === baseDomainWithoutPort ||
     hostWithoutPort === `www.${baseDomainWithoutPort}`;
 
-  // Extract subdomain - it's a subdomain if it's not the base domain and has more parts
-  const baseParts = baseDomainWithoutPort.split(".").length;
-  const hostParts = hostWithoutPort.split(".").length;
-  const isSubdomain = !isBaseDomain && hostParts > baseParts;
+  // Check if host ends with base domain (to prevent cross-domain false positives)
+  const isUnderBaseDomain =
+    hostWithoutPort === baseDomainWithoutPort ||
+    hostWithoutPort.endsWith(`.${baseDomainWithoutPort}`);
+
+  // Extract subdomain - it's a subdomain if it's under base domain but not the base itself
+  const isSubdomain = isUnderBaseDomain && !isBaseDomain;
 
   // Get token for auth check
   const token = await getToken({
@@ -35,7 +38,7 @@ export async function middleware(request: NextRequest) {
   // Handle subdomain requests (public booking pages)
   if (isSubdomain) {
     // Extract subdomain (e.g., "myshop" from "myshop.barberbook.my.id")
-    const subdomain = hostWithoutPort.split(".")[0];
+    const subdomain = hostWithoutPort.replace(`.${baseDomainWithoutPort}`, "");
 
     // Skip static files and api
     if (
