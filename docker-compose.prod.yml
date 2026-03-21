@@ -21,7 +21,7 @@ services:
   # BarberBook Application
   # Pulls prebuilt image from registry. Use docker-compose.yml for local builds.
   app:
-    image: ${DOCKER_IMAGE:-barberbook:latest}
+    image: ${DOCKER_IMAGE:-ghcr.io/fikkie007/barberbook:latest}
     container_name: barberbook-app
     restart: unless-stopped
     depends_on:
