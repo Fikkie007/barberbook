@@ -40,7 +40,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Install Prisma CLI globally for running migrations (pinned to match package.json version)
-RUN npm install -g prisma@6.19.2
+RUN npm install -g prisma@6.19.2 tsx
 
 # Copy necessary files
 COPY --from=builder /app/public ./public
@@ -51,6 +51,7 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
 # Generate Prisma client for the target architecture (must run as root before chown)
 RUN prisma generate
