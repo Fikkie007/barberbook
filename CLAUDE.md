@@ -103,6 +103,7 @@ All API routes are in `src/app/api/`:
 - `auth/register/` - User registration
 - `bookings/` - CRUD for bookings (public create, owner manage)
 - `bookings/send-reminder/` - QStash webhook for scheduled reminders
+- `cron/` - Cron endpoint for processing pending notifications (call hourly)
 - `services/` - Shop services management
 - `barbers/` - Shop barbers management
 - `shops/` - Shop lookup by slug
@@ -160,6 +161,9 @@ Optional for scheduled reminders:
 - `QSTASH_CURRENT_SIGNING_KEY` - QStash signing key for webhook verification
 - `QSTASH_NEXT_SIGNING_KEY` - QStash next signing key for key rotation
 
+Optional for cron endpoint:
+- `CRON_SECRET` - Secret token to authenticate cron requests (protects endpoint from abuse)
+
 ## Coding Patterns
 
 ### Error Handling in External Services
@@ -194,3 +198,19 @@ APIs return JSON with this structure:
   - `ci.yml` - Runs on all PRs (lint, build)
   - `deploy.yml` - Builds Docker image, pushes to ghcr.io, deploys via SSH on merge to master/main
 - Production uses `docker-compose.prod.yml`
+
+### Cron Job Setup
+
+The `/api/cron` endpoint processes pending WhatsApp notifications. Set up an external cron service to call it hourly:
+
+```bash
+# Example with curl (add to crontab or use a service like cron-job.org)
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" https://yourdomain.com/api/cron
+
+# Or via query param
+curl "https://yourdomain.com/api/cron?token=YOUR_CRON_SECRET"
+```
+
+The cron job handles:
+1. Sending pending booking confirmations
+2. Sending reminders for bookings within 24 hours
