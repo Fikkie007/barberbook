@@ -201,14 +201,15 @@ APIs return JSON with this structure:
 
 ### Cron Job Setup
 
-The `/api/cron` endpoint processes pending WhatsApp notifications. Set up an external cron service to call it hourly:
+The `/api/cron` endpoint processes pending WhatsApp notifications. Set up an external cron service to call it hourly.
 
-```bash
-# Example with curl (add to crontab or use a service like cron-job.org)
-curl -H "Authorization: Bearer YOUR_CRON_SECRET" https://yourdomain.com/api/cron
+**Authentication options:**
+- Authorization header: `Authorization: Bearer <CRON_SECRET>`
+- Query parameter: `?token=<CRON_SECRET>`
 
-# Or via query param
-curl "https://yourdomain.com/api/cron?token=YOUR_CRON_SECRET"
+**Crontab example:**
+```
+0 * * * * curl -H "Authorization: Bearer $CRON_SECRET" https://yourdomain.com/api/cron
 ```
 
 The cron job handles:
