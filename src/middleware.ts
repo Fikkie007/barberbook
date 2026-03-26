@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/lib/auth";
 
 // Subdomain routing for multi-tenant
-export async function middleware(request: NextRequest) {
+export const middleware = auth((request) => {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
@@ -24,12 +24,6 @@ export async function middleware(request: NextRequest) {
 
   // Extract subdomain - it's a subdomain if it's under base domain but not the base itself
   const isSubdomain = isUnderBaseDomain && !isBaseDomain;
-
-  // Get token for auth check
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
 
   // Public paths that don't require authentication
   const publicPaths = ["/auth/login", "/auth/register", "/api"];
@@ -57,7 +51,7 @@ export async function middleware(request: NextRequest) {
 
   // Protected dashboard routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/settings")) {
-    if (!token) {
+    if (!request.auth) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
@@ -65,12 +59,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect logged-in users away from auth pages
-  if (isPublicPath && token && !pathname.startsWith("/api")) {
+  if (isPublicPath && request.auth && !pathname.startsWith("/api")) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: [
