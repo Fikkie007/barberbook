@@ -40,8 +40,6 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Email atau password salah");
       } else if (result?.ok) {
-        // Small delay to ensure cookie is set before redirect
-        await new Promise((resolve) => setTimeout(resolve, 100));
         router.push("/dashboard");
         router.refresh();
       } else {
