@@ -29,8 +29,12 @@ npx prisma db seed       # Seed database with demo data
 npx prisma studio        # Open Prisma database GUI
 npx prisma generate      # Generate Prisma client
 
-npx tsx scripts/test-qstash.ts  # Test QStash configuration
+npx tsx scripts/test-qstash.ts          # Test QStash configuration
+npx tsx scripts/test-reminder-flow.ts   # Test reminder scheduling flow
+npx tsx scripts/test-webhook-manual.ts  # Manual webhook testing
 ```
+
+**Note:** No automated test suite is configured. Tests are run via manual scripts in `scripts/`.
 
 ### Docker Commands
 
@@ -151,7 +155,7 @@ Optional for WhatsApp notifications:
 - `FONNTE_API_URL` - WhatsApp API URL
 
 Optional for scheduled reminders:
-- `QSTASH_URL` - QStash endpoint (defaults to Upstash, use `http://localhost:4000` for local QStash)
+- `QSTASH_URL` - QStash endpoint (defaults to Upstash `https://qstash.upstash.io`, use `http://localhost:4000` for local QStash)
 - `QSTASH_TOKEN` - Upstash QStash token
 - `QSTASH_CURRENT_SIGNING_KEY` - QStash signing key for webhook verification
 - `QSTASH_NEXT_SIGNING_KEY` - QStash next signing key for key rotation

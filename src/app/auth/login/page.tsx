@@ -39,9 +39,11 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError("Email atau password salah");
-      } else {
+      } else if (result?.ok) {
         router.push("/dashboard");
         router.refresh();
+      } else {
+        setError("Terjadi kesalahan. Silakan coba lagi.");
       }
     } catch {
       setError("Terjadi kesalahan. Silakan coba lagi.");
