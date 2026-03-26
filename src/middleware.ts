@@ -2,6 +2,26 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 
+/**
+ * Get the actual protocol from the request (handles reverse proxy)
+ */
+function getProtocol(request: NextRequest): string {
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  if (forwardedProto) {
+    return forwardedProto;
+  }
+  return request.nextUrl.protocol.replace(":", "");
+}
+
+/**
+ * Construct a URL with the correct protocol
+ */
+function getSecureUrl(request: NextRequest, path: string): URL {
+  const protocol = getProtocol(request);
+  const host = request.headers.get("host") || "localhost:3000";
+  return new URL(`${protocol}://${host}${path}`);
+}
+
 // Subdomain routing for multi-tenant
 export const middleware = auth((request) => {
   const { pathname } = request.nextUrl;
@@ -52,7 +72,7 @@ export const middleware = auth((request) => {
   // Protected dashboard routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/settings")) {
     if (!request.auth) {
-      const loginUrl = new URL("/auth/login", request.url);
+      const loginUrl = getSecureUrl(request, "/auth/login");
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -60,7 +80,7 @@ export const middleware = auth((request) => {
 
   // Redirect logged-in users away from auth pages
   if (isPublicPath && request.auth && !pathname.startsWith("/api")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(getSecureUrl(request, "/dashboard"));
   }
 
   return NextResponse.next();
