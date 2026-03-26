@@ -21,11 +21,17 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: Role;
-  }
+// Custom JWT type for callbacks (NextAuth v5 doesn't support module augmentation for JWT)
+interface CustomJWT {
+  id?: string;
+  role?: Role;
+  name?: string | null;
+  email?: string | null;
+  picture?: string | null;
+  sub?: string;
+  iat?: number;
+  exp?: number;
+  jti?: string;
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -70,15 +76,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id!;
-        token.role = user.role;
+        const t = token as CustomJWT;
+        t.id = user.id;
+        t.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
+        const t = token as CustomJWT;
+        session.user.id = t.id!;
+        session.user.role = t.role!;
       }
       return session;
     },
