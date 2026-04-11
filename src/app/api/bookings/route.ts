@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       bookingTime,
       notes,
       totalPrice,
+      source,
     } = body;
 
     // Validate required fields
@@ -65,6 +66,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Determine booking source - default to ONLINE if not specified
+    const bookingSource = source === "OFFLINE" ? "OFFLINE" : "ONLINE";
+
     // Create booking
     const booking = await prisma.booking.create({
       data: {
@@ -79,6 +83,7 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         totalPrice: totalPrice || shop.services[0].price,
         status: "PENDING",
+        source: bookingSource,
       },
       include: {
         service: true,

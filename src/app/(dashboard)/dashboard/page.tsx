@@ -83,8 +83,11 @@ export default async function DashboardPage({
     thisWeekBookings,
     thisMonthBookings,
     totalRevenue,
+    onlineRevenue,
+    offlineRevenue,
     recentBookings,
     monthlyRevenue,
+    monthlyRevenueBySource,
   ] = await Promise.all([
     // Total bookings
     prisma.booking.count({
@@ -128,6 +131,16 @@ export default async function DashboardPage({
       where: { shopId: activeShopId, status: "COMPLETED" },
       _sum: { totalPrice: true },
     }),
+    // Online revenue
+    prisma.booking.aggregate({
+      where: { shopId: activeShopId, status: "COMPLETED", source: "ONLINE" },
+      _sum: { totalPrice: true },
+    }),
+    // Offline revenue
+    prisma.booking.aggregate({
+      where: { shopId: activeShopId, status: "COMPLETED", source: "OFFLINE" },
+      _sum: { totalPrice: true },
+    }),
     // Recent bookings
     prisma.booking.findMany({
       where: { shopId: activeShopId },
@@ -148,6 +161,20 @@ export default async function DashboardPage({
       GROUP BY DATE_TRUNC('month', "bookingDate")
       ORDER BY month ASC
     `,
+    // Monthly revenue by source for chart
+    prisma.$queryRaw<Array<{ month: Date; source: string; revenue: bigint; count: bigint }>>`
+      SELECT
+        DATE_TRUNC('month', "bookingDate") as month,
+        source,
+        SUM("totalPrice") as revenue,
+        COUNT(*) as count
+      FROM bookings
+      WHERE "shopId" = ${activeShopId}
+        AND status = 'COMPLETED'
+        AND "bookingDate" >= DATE_TRUNC('year', CURRENT_DATE)
+      GROUP BY DATE_TRUNC('month', "bookingDate"), source
+      ORDER BY month ASC
+    `,
   ]);
 
   const stats = {
@@ -159,13 +186,31 @@ export default async function DashboardPage({
     thisWeekBookings,
     thisMonthBookings,
     totalRevenue: totalRevenue._sum.totalPrice || 0,
+    onlineRevenue: onlineRevenue._sum.totalPrice || 0,
+    offlineRevenue: offlineRevenue._sum.totalPrice || 0,
   };
 
-  // Format chart data
-  const chartData = monthlyRevenue.map((item) => ({
-    month: format(item.month, "MMM", { locale: id }),
-    revenue: Number(item.revenue),
-    bookings: Number(item.count),
+  // Format chart data with source breakdown
+  const monthMap = new Map<string, { online: number; offline: number; bookings: number }>();
+
+  monthlyRevenueBySource.forEach((item) => {
+    const monthKey = format(item.month, "MMM", { locale: id });
+    const existing = monthMap.get(monthKey) || { online: 0, offline: 0, bookings: 0 };
+    if (item.source === "ONLINE") {
+      existing.online = Number(item.revenue);
+    } else {
+      existing.offline = Number(item.revenue);
+    }
+    existing.bookings += Number(item.count);
+    monthMap.set(monthKey, existing);
+  });
+
+  const chartData = Array.from(monthMap.entries()).map(([month, data]) => ({
+    month,
+    online: data.online,
+    offline: data.offline,
+    revenue: data.online + data.offline,
+    bookings: data.bookings,
   }));
 
   return (
@@ -213,7 +258,7 @@ export default async function DashboardPage({
       </div>
 
       {/* Additional Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <p className="text-sm text-slate-400">Booking Hari Ini</p>
           <p className="text-2xl font-bold text-white">{stats.todayBookings}</p>
@@ -225,6 +270,14 @@ export default async function DashboardPage({
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <p className="text-sm text-slate-400">Booking Bulan Ini</p>
           <p className="text-2xl font-bold text-white">{stats.thisMonthBookings}</p>
+        </div>
+        <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
+          <p className="text-sm text-slate-400">Pendapatan Online</p>
+          <p className="text-2xl font-bold text-blue-400">Rp {stats.onlineRevenue.toLocaleString("id-ID")}</p>
+        </div>
+        <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
+          <p className="text-sm text-slate-400">Pendapatan Offline</p>
+          <p className="text-2xl font-bold text-green-400">Rp {stats.offlineRevenue.toLocaleString("id-ID")}</p>
         </div>
       </div>
 

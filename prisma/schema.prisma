@@ -103,6 +103,7 @@ model Booking {
   bookingDate     DateTime      // tanggal booking
   bookingTime     String        // format: "09:00"
   status          BookingStatus @default(PENDING)
+  source          BookingSource @default(ONLINE)
   notes           String?
   whatsappSent    Boolean       @default(false)
   confirmationSent Boolean      @default(false)
@@ -146,4 +147,10 @@ enum BookingStatus {
   CONFIRMED
   COMPLETED
   CANCELLED
+}
+
+// Enum untuk sumber booking
+enum BookingSource {
+  ONLINE    // Customer booked via public booking page
+  OFFLINE   // Owner created booking in dashboard (walk-in)
 }
