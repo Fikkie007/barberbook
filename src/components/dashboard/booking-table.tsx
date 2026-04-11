@@ -27,6 +27,7 @@ interface BookingWithRelations {
   bookingDate: Date;
   bookingTime: string;
   status: string;
+  source: string;
   totalPrice: number;
   service: { name: string };
   barber: { name: string } | null;
@@ -49,6 +50,16 @@ const statusLabels: Record<string, string> = {
   CONFIRMED: "Dikonfirmasi",
   COMPLETED: "Selesai",
   CANCELLED: "Dibatalkan",
+};
+
+const sourceColors: Record<string, string> = {
+  ONLINE: "bg-blue-500/10 text-blue-300",
+  OFFLINE: "bg-green-500/10 text-green-300",
+};
+
+const sourceLabels: Record<string, string> = {
+  ONLINE: "Online",
+  OFFLINE: "Offline",
 };
 
 export default function BookingTable({ bookings, onStatusUpdate }: BookingTableProps) {
@@ -113,9 +124,14 @@ export default function BookingTable({ bookings, onStatusUpdate }: BookingTableP
               </div>
             </TableCell>
             <TableCell>
-              <Badge className={statusColors[booking.status]}>
-                {statusLabels[booking.status]}
-              </Badge>
+              <div className="flex flex-wrap gap-1">
+                <Badge className={statusColors[booking.status]}>
+                  {statusLabels[booking.status]}
+                </Badge>
+                <Badge className={sourceColors[booking.source] || "bg-slate-500/10 text-slate-300"}>
+                  {sourceLabels[booking.source] || booking.source}
+                </Badge>
+              </div>
             </TableCell>
             <TableCell className="text-white">
               Rp {booking.totalPrice.toLocaleString("id-ID")}

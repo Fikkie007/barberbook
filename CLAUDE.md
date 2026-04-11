@@ -13,8 +13,11 @@ BarberBook is a multi-tenant SaaS platform for barbershop online booking. Each s
 - **Auth:** NextAuth.js v5 (beta) with JWT sessions
 - **UI:** shadcn/ui + Tailwind CSS v4
 - **Forms:** react-hook-form + Zod v4
+- **Charts:** Recharts for dashboard revenue visualization
 - **WhatsApp:** Fonnte API
 - **Scheduled Jobs:** Upstash QStash (for reminder scheduling)
+
+**TypeScript:** Strict mode enabled. Import paths use `@/*` alias (e.g., `@/lib/auth`). Prisma types imported from `@prisma/client` (generated types in `src/generated/prisma/`).
 
 ## Commands
 
@@ -58,6 +61,7 @@ The middleware (`src/middleware.ts`) handles:
 1. Subdomain extraction and rewriting to `/booking/[slug]`
 2. Authentication protection for `/dashboard` routes
 3. Redirecting authenticated users away from auth pages
+4. **Reverse proxy support:** Uses `X-Forwarded-Proto` header for correct HTTPS detection behind proxies (important for production deployment)
 
 For local subdomain testing:
 - **Linux/Mac:** Add to `/etc/hosts`
@@ -75,6 +79,7 @@ For local subdomain testing:
 - Roles: `OWNER` (shop owner), `ADMIN` (platform admin)
 - Session user type extended with `id` and `role` in `src/lib/auth.ts`
 - **Dual protection:** Middleware redirects unauthenticated users from `/dashboard` and `/settings`. Dashboard layout (`src/app/(dashboard)/layout.tsx`) also calls `auth()` and redirects if no session.
+- `trustHost: true` enabled for reverse proxy compatibility
 
 ### Database
 
@@ -83,6 +88,8 @@ For local subdomain testing:
 - Generated Prisma types in `src/generated/prisma/`
 - Schema includes: User, Shop, Service, Barber, Booking, WorkingDay
 - Booking model has reminder tracking fields: `whatsappSent`, `confirmationSent`, `reminderSent`, `qstashMessageId`
+- Booking model has `source` field (`ONLINE` or `OFFLINE`) to track booking origin
+- Booking model has `totalPrice` field for storing the booking price
 - Seed file creates demo shop with services/barbers (`prisma/seed.ts`)
 
 **Data conventions:**
@@ -101,7 +108,7 @@ For local subdomain testing:
 All API routes are in `src/app/api/`:
 - `auth/[...nextauth]/` - NextAuth handlers
 - `auth/register/` - User registration
-- `bookings/` - CRUD for bookings (public create, owner manage)
+- `bookings/` - CRUD for bookings (public create, owner manage; supports `source: ONLINE|OFFLINE` parameter)
 - `bookings/send-reminder/` - QStash webhook for scheduled reminders
 - `cron/` - Cron endpoint for processing pending notifications (call hourly)
 - `services/` - Shop services management
@@ -134,12 +141,21 @@ docker run -d -p 4000:3000 upstash/qstash-local
 - All types centralized in `src/types/index.ts`
 - Prisma types re-exported for use throughout app
 - Extended types: `ShopWithDetails`, `BookingWithDetails`, `DashboardStats`
+- `DashboardStats` includes `onlineRevenue` and `offlineRevenue` for revenue breakdown by booking source
+
+### Dashboard Features
+
+- Stats cards show booking counts and revenue totals
+- Revenue chart displays monthly breakdown by source (online vs offline) using stacked area chart
+- Booking table shows all bookings with service, barber, and source info
+- Offline booking dialog (`src/components/dashboard/offline-booking-dialog.tsx`) allows owners to create walk-in bookings with `source: OFFLINE`
 
 ### UI Components
 
 - Uses shadcn/ui components in `src/components/ui/`
 - Layout components in `src/components/layout/`
 - Feature components in `src/components/booking/` and `src/components/dashboard/`
+- Key dashboard components: `stats-card.tsx`, `booking-table.tsx`, `revenue-chart.tsx`, `offline-booking-dialog.tsx`
 - Form validation with react-hook-form + Zod
 
 ## Environment Variables

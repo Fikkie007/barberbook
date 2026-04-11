@@ -5,9 +5,10 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 ## Fitur
 
 - 📅 **Booking Online 24/7** - Pelanggan bisa booking kapan saja
+- 🏃 **Offline Booking** - Catat booking walk-in/customer langsung datang
 - 💬 **Notifikasi WhatsApp Otomatis** - Konfirmasi, reminder, dan notifikasi otomatis
 - 🏪 **Multi-tenant** - Setiap toko memiliki subdomain unik
-- 📊 **Dashboard Owner** - Kelola booking, layanan, dan barber
+- 📊 **Dashboard Owner** - Kelola booking, layanan, dan barber dengan breakdown revenue online vs offline
 - 📱 **Mobile Friendly** - Responsif di semua perangkat
 
 ## Tech Stack
@@ -71,6 +72,9 @@ QSTASH_TOKEN="your-qstash-token"
 QSTASH_CURRENT_SIGNING_KEY="your-signing-key"
 QSTASH_NEXT_SIGNING_KEY="your-next-signing-key"
 
+# Cron endpoint (optional - untuk memproses pending notifications)
+CRON_SECRET="your-cron-secret-token"
+
 # App Config
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NEXT_PUBLIC_APP_DOMAIN="localhost:3000"
@@ -97,12 +101,31 @@ npm run dev
 
 Buka [http://localhost:3000](http://localhost:3000) di browser.
 
+## Dashboard Features
+
+Dashboard owner memiliki fitur lengkap untuk mengelola barbershop:
+
+- **Stats Cards** - Total booking, revenue, dan breakdown per source (online vs offline)
+- **Revenue Chart** - Visualisasi revenue bulanan dengan breakdown online/offline menggunakan stacked area chart
+- **Booking Table** - Daftar semua booking dengan info service, barber, dan source
+- **Offline Booking Dialog** - Form untuk mencatat booking walk-in/customer yang datang langsung ke toko
+
+### Offline Booking
+
+Owner bisa mencatat booking dari customer yang datang langsung (walk-in):
+
+1. Klik tombol "Tambah Booking Offline" di dashboard
+2. Isi form: nama customer, telepon, service, barber, tanggal/waktu
+3. Sistem akan tracking booking sebagai `source: OFFLINE`
+4. WhatsApp notifikasi tetap bisa dikirim jika nomor valid
+
 ## Demo Account
 
 Setelah menjalankan seed, gunakan akun berikut:
 
 - **Email:** owner@demo.com
 - **Password:** password123
+- **Demo shop slug:** `demo-barbershop`
 
 ## Multi-tenant Routing
 
@@ -126,7 +149,7 @@ Untuk testing subdomain di localhost, edit file `/etc/hosts`:
 4. Tambahkan `FONNTE_API_KEY` ke `.env`
 
 Pesan otomatis akan dikirim saat:
-- Booking baru dibuat (konfirmasi)
+- Booking baru dibuat (konfirmasi) - baik online maupun offline
 - Status booking diubah ke COMPLETED (terima kasih)
 - Booking dibatalkan (pembatalan)
 - 24 jam sebelum appointment (reminder) - memerlukan QStash
@@ -245,6 +268,9 @@ QSTASH_URL="https://qstash.upstash.io"
 QSTASH_TOKEN="your-qstash-token"
 QSTASH_CURRENT_SIGNING_KEY="your-current-signing-key"
 QSTASH_NEXT_SIGNING_KEY="your-next-signing-key"
+
+# Cron endpoint (untuk memproses pending notifications)
+CRON_SECRET="your-cron-secret-token"
 
 # App Config
 NEXT_PUBLIC_APP_URL="https://yourdomain.com"

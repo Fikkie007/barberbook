@@ -1,7 +1,7 @@
-import { Booking, BookingStatus, Role, Service, Shop, Barber, User } from "@prisma/client";
+import { Booking, BookingStatus, BookingSource, Role, Service, Shop, Barber, User } from "@prisma/client";
 
 // Re-export types from Prisma
-export type { Booking, BookingStatus, Role, Service, Shop, Barber, User };
+export type { Booking, BookingStatus, BookingSource, Role, Service, Shop, Barber, User };
 
 // API Response types
 export interface ApiResponse<T = unknown> {
@@ -51,6 +51,8 @@ export interface DashboardStats {
   completedBookings: number;
   cancelledBookings: number;
   totalRevenue: number;
+  onlineRevenue: number;
+  offlineRevenue: number;
   todayBookings: number;
   thisWeekBookings: number;
   thisMonthBookings: number;
