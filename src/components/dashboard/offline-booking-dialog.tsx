@@ -237,17 +237,6 @@ export default function OfflineBookingDialog({
     }
 
     try {
-      // Debug log
-      console.log("Submitting booking:", {
-        shopId,
-        serviceId: formData.serviceId,
-        barberId: formData.barberId || null,
-        customerName: formData.customerName,
-        customerPhone: formData.customerPhone,
-        bookingDate: formData.bookingDate?.toISOString(),
-        bookingTime: formData.bookingTime,
-      });
-
       const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -267,7 +256,6 @@ export default function OfflineBookingDialog({
       });
 
       const data = await response.json();
-      console.log("API response:", response.status, data);
 
       if (!response.ok) {
         throw new Error(data.error || "Gagal membuat booking");

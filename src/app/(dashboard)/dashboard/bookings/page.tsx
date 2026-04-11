@@ -36,19 +36,13 @@ export default async function BookingsPage({
     where.status = selectedStatus;
   }
 
-  // Get bookings, counts, services, barbers, and shop data
-  const [bookings, counts, services, barbers, shop] = await Promise.all([
+  // Get bookings, services, barbers, and shop data
+  const [bookings, services, barbers, shop] = await Promise.all([
     // Bookings
     prisma.booking.findMany({
       where,
       include: { service: true, barber: true },
       orderBy: [{ bookingDate: "desc" }, { bookingTime: "desc" }],
-    }),
-    // Counts by status
-    prisma.booking.groupBy({
-      by: ["status"],
-      where: { shopId: activeShopId },
-      _count: true,
     }),
     // Services
     prisma.service.findMany({
@@ -75,11 +69,6 @@ export default async function BookingsPage({
     }),
   ]);
 
-  const statusCounts = counts.reduce((acc, item) => {
-    acc[item.status] = item._count;
-    return acc;
-  }, {} as Record<string, number>);
-
   return (
     <BookingsClient
       shopId={activeShopId}
@@ -92,7 +81,6 @@ export default async function BookingsPage({
         closingTime: shop?.closingTime || "21:00",
       }}
       selectedStatus={selectedStatus}
-      statusCounts={statusCounts}
     />
   );
 }

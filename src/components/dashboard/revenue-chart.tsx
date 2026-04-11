@@ -16,8 +16,6 @@ interface RevenueChartProps {
     month: string;
     online: number;
     offline: number;
-    revenue: number;
-    bookings: number;
   }>;
 }
 
@@ -75,17 +73,14 @@ export default function RevenueChart({ data }: RevenueChartProps) {
             if (nameStr === "online") {
               return [formatCurrency(numValue), "Online"];
             }
-            if (nameStr === "offline") {
-              return [formatCurrency(numValue), "Offline"];
-            }
-            return [formatCurrency(numValue), "Total"];
+            // offline
+            return [formatCurrency(numValue), "Offline"];
           }}
         />
         <Legend
           formatter={(value) => {
             if (value === "online") return "Online";
-            if (value === "offline") return "Offline";
-            return value;
+            return "Offline";
           }}
         />
         <Area

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import BookingTable from "@/components/dashboard/booking-table";
@@ -47,7 +47,6 @@ interface BookingsClientProps {
     closingTime: string;
   };
   selectedStatus?: string;
-  statusCounts: Record<string, number>;
 }
 
 export default function BookingsClient({
@@ -58,10 +57,23 @@ export default function BookingsClient({
   workingDays,
   shopHours,
   selectedStatus,
-  statusCounts,
 }: BookingsClientProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookings, setBookings] = useState<BookingWithRelations[]>(initialBookings);
+
+  // Compute status counts from current bookings state
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      PENDING: 0,
+      CONFIRMED: 0,
+      COMPLETED: 0,
+      CANCELLED: 0,
+    };
+    for (const booking of bookings) {
+      counts[booking.status] = (counts[booking.status] || 0) + 1;
+    }
+    return counts;
+  }, [bookings]);
 
   const handleBookingSuccess = async () => {
     // Refresh bookings list
