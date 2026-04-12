@@ -29,6 +29,8 @@ interface BookingWithRelations {
   status: string;
   source: string;
   totalPrice: number;
+  servicePrice: number;
+  tipAmount: number;
   service: { name: string };
   barber: { name: string } | null;
 }
@@ -134,7 +136,16 @@ export default function BookingTable({ bookings, onStatusUpdate }: BookingTableP
               </div>
             </TableCell>
             <TableCell className="text-white">
-              Rp {booking.totalPrice.toLocaleString("id-ID")}
+              {booking.tipAmount > 0 ? (
+                <div>
+                  <p>Rp {booking.totalPrice.toLocaleString("id-ID")}</p>
+                  <p className="text-xs text-slate-400">
+                    (+ Rp {booking.tipAmount.toLocaleString("id-ID")} tip)
+                  </p>
+                </div>
+              ) : (
+                <p>Rp {booking.totalPrice.toLocaleString("id-ID")}</p>
+              )}
             </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>

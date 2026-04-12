@@ -51,6 +51,8 @@ export interface DashboardStats {
   completedBookings: number;
   cancelledBookings: number;
   totalRevenue: number;
+  serviceRevenue: number;    // revenue from services only
+  tipRevenue: number;        // revenue from tips only
   onlineRevenue: number;
   offlineRevenue: number;
   todayBookings: number;

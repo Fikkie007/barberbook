@@ -51,6 +51,7 @@ interface FormData {
   bookingDate: Date | undefined;
   bookingTime: string;
   notes: string;
+  tipAmount: number;
 }
 
 const STEPS = [
@@ -75,6 +76,7 @@ export default function BookingForm({ shop }: BookingFormProps) {
     bookingDate: undefined,
     bookingTime: "",
     notes: "",
+    tipAmount: 0,
   });
 
   const selectedService = shop.services.find(
@@ -190,7 +192,7 @@ export default function BookingForm({ shop }: BookingFormProps) {
           bookingDate: formData.bookingDate.toISOString(),
           bookingTime: formData.bookingTime,
           notes: formData.notes || null,
-          totalPrice: selectedService?.price || 0,
+          tipAmount: formData.tipAmount || 0,
         }),
       });
 
@@ -243,7 +245,17 @@ export default function BookingForm({ shop }: BookingFormProps) {
               </p>
               <p>Waktu: {formData.bookingTime}</p>
               <p>Layanan: {selectedService?.name}</p>
-              <p>Total: Rp {selectedService?.price.toLocaleString("id-ID")}</p>
+              {formData.tipAmount > 0 ? (
+                <div className="pt-2 border-t border-slate-600">
+                  <p>Layanan: Rp {(selectedService?.price || 0).toLocaleString("id-ID")}</p>
+                  <p>Tip: Rp {formData.tipAmount.toLocaleString("id-ID")}</p>
+                  <p className="font-semibold text-white">
+                    Total: Rp {((selectedService?.price || 0) + formData.tipAmount).toLocaleString("id-ID")}
+                  </p>
+                </div>
+              ) : (
+                <p>Total: Rp {(selectedService?.price || 0).toLocaleString("id-ID")}</p>
+              )}
             </div>
           </div>
         </CardContent>
@@ -473,6 +485,29 @@ export default function BookingForm({ shop }: BookingFormProps) {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="tipAmount" className="text-slate-300">
+                  Tip (Opsional)
+                </Label>
+                <Input
+                  id="tipAmount"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={formData.tipAmount || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      tipAmount: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="0"
+                  className="border-slate-600 bg-slate-700/50 text-white"
+                />
+                <p className="text-xs text-slate-400">
+                  Berikan tip untuk barber Anda (dalam Rupiah)
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="notes" className="text-slate-300">
                   Catatan (Opsional)
                 </Label>
@@ -538,12 +573,35 @@ export default function BookingForm({ shop }: BookingFormProps) {
                     </div>
                   )}
                   <div className="border-t border-slate-600 pt-3">
-                    <div className="flex justify-between text-base font-semibold">
-                      <span className="text-white">Total</span>
-                      <span className="text-amber-400">
-                        Rp {selectedService?.price.toLocaleString("id-ID")}
-                      </span>
-                    </div>
+                    {formData.tipAmount > 0 ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-300">Layanan</span>
+                          <span className="text-white">
+                            Rp {selectedService?.price.toLocaleString("id-ID")}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-300">Tip</span>
+                          <span className="text-white">
+                            Rp {formData.tipAmount.toLocaleString("id-ID")}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-base font-semibold pt-2 border-t border-slate-600">
+                          <span className="text-white">Total</span>
+                          <span className="text-amber-400">
+                            Rp {((selectedService?.price || 0) + formData.tipAmount).toLocaleString("id-ID")}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between text-base font-semibold">
+                        <span className="text-white">Total</span>
+                        <span className="text-amber-400">
+                          Rp {(selectedService?.price || 0).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       bookingDate,
       bookingTime,
       notes,
-      totalPrice,
+      tipAmount,
       source,
     } = body;
 
@@ -69,6 +69,11 @@ export async function POST(request: NextRequest) {
     // Determine booking source - default to ONLINE if not specified
     const bookingSource = source === "OFFLINE" ? "OFFLINE" : "ONLINE";
 
+    // Calculate pricing
+    const servicePrice = shop.services[0].price;
+    const tip = tipAmount || 0;
+    const totalPrice = servicePrice + tip;
+
     // Create booking
     const booking = await prisma.booking.create({
       data: {
@@ -81,7 +86,9 @@ export async function POST(request: NextRequest) {
         bookingDate: new Date(bookingDate),
         bookingTime,
         notes: notes || null,
-        totalPrice: totalPrice || shop.services[0].price,
+        servicePrice,
+        tipAmount: tip,
+        totalPrice,
         status: "PENDING",
         source: bookingSource,
       },
@@ -100,7 +107,9 @@ export async function POST(request: NextRequest) {
         barberName: booking.barber?.name,
         date: format(booking.bookingDate, "EEEE, d MMMM yyyy", { locale: id }),
         time: booking.bookingTime,
-        price: booking.totalPrice,
+        servicePrice: booking.servicePrice,
+        tipAmount: booking.tipAmount,
+        totalPrice: booking.totalPrice,
       });
 
       // Format phone number (remove leading 0, add country code)

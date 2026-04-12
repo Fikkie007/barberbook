@@ -75,7 +75,9 @@ export async function GET(request: NextRequest) {
         barberName: booking.barber?.name,
         date: format(booking.bookingDate, "EEEE, d MMMM yyyy", { locale: id }),
         time: booking.bookingTime,
-        price: booking.service.price,
+        servicePrice: booking.servicePrice || booking.service.price,
+        tipAmount: booking.tipAmount || 0,
+        totalPrice: booking.totalPrice || booking.service.price,
       });
 
       const result = await sendWhatsAppMessage({

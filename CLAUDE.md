@@ -89,7 +89,7 @@ For local subdomain testing:
 - Schema includes: User, Shop, Service, Barber, Booking, WorkingDay
 - Booking model has reminder tracking fields: `whatsappSent`, `confirmationSent`, `reminderSent`, `qstashMessageId`
 - Booking model has `source` field (`ONLINE` or `OFFLINE`) to track booking origin
-- Booking model has `totalPrice` field for storing the booking price
+- Booking model has pricing fields: `servicePrice` (base service price at booking time), `tipAmount` (tip in rupiah), `totalPrice` (calculated as servicePrice + tipAmount)
 - Seed file creates demo shop with services/barbers (`prisma/seed.ts`)
 
 **Data conventions:**
@@ -141,7 +141,7 @@ docker run -d -p 4000:3000 upstash/qstash-local
 - All types centralized in `src/types/index.ts`
 - Prisma types re-exported for use throughout app
 - Extended types: `ShopWithDetails`, `BookingWithDetails`, `DashboardStats`
-- `DashboardStats` includes `onlineRevenue` and `offlineRevenue` for revenue breakdown by booking source
+- `DashboardStats` includes revenue breakdowns: `onlineRevenue`/`offlineRevenue` (by booking source), `serviceRevenue`/`tipRevenue` (by revenue type)
 
 ### Dashboard Features
 
@@ -206,6 +206,15 @@ APIs return JSON with this structure:
 { success: true, data: {...} }  // Success
 { error: "Pesan error" }         // Error (in Indonesian)
 ```
+
+### Pricing Calculation
+
+When creating bookings, the pricing fields are calculated as:
+- `servicePrice` = price from the Service model at booking time (captured to preserve historical pricing)
+- `tipAmount` = optional tip provided by customer (defaults to 0)
+- `totalPrice` = servicePrice + tipAmount
+
+Revenue breakdown in dashboard separates service revenue from tip revenue for reporting purposes.
 
 ## Deployment
 

@@ -83,6 +83,8 @@ export default async function DashboardPage({
     thisWeekBookings,
     thisMonthBookings,
     totalRevenue,
+    serviceRevenue,
+    tipRevenue,
     onlineRevenue,
     offlineRevenue,
     recentBookings,
@@ -130,6 +132,16 @@ export default async function DashboardPage({
     prisma.booking.aggregate({
       where: { shopId: activeShopId, status: "COMPLETED" },
       _sum: { totalPrice: true },
+    }),
+    // Service revenue (sum of servicePrice)
+    prisma.booking.aggregate({
+      where: { shopId: activeShopId, status: "COMPLETED" },
+      _sum: { servicePrice: true },
+    }),
+    // Tip revenue (sum of tipAmount)
+    prisma.booking.aggregate({
+      where: { shopId: activeShopId, status: "COMPLETED" },
+      _sum: { tipAmount: true },
     }),
     // Online revenue
     prisma.booking.aggregate({
@@ -186,6 +198,8 @@ export default async function DashboardPage({
     thisWeekBookings,
     thisMonthBookings,
     totalRevenue: totalRevenue._sum.totalPrice || 0,
+    serviceRevenue: serviceRevenue._sum.servicePrice || 0,
+    tipRevenue: tipRevenue._sum.tipAmount || 0,
     onlineRevenue: onlineRevenue._sum.totalPrice || 0,
     offlineRevenue: offlineRevenue._sum.totalPrice || 0,
   };
@@ -258,7 +272,7 @@ export default async function DashboardPage({
       </div>
 
       {/* Additional Stats */}
-      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <p className="text-sm text-slate-400">Booking Hari Ini</p>
           <p className="text-2xl font-bold text-white">{stats.todayBookings}</p>
@@ -272,12 +286,16 @@ export default async function DashboardPage({
           <p className="text-2xl font-bold text-white">{stats.thisMonthBookings}</p>
         </div>
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-          <p className="text-sm text-slate-400">Pendapatan Online</p>
-          <p className="text-2xl font-bold text-blue-400">Rp {stats.onlineRevenue.toLocaleString("id-ID")}</p>
+          <p className="text-sm text-slate-400">Pendapatan Layanan</p>
+          <p className="text-2xl font-bold text-blue-400">Rp {stats.serviceRevenue.toLocaleString("id-ID")}</p>
         </div>
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-          <p className="text-sm text-slate-400">Pendapatan Offline</p>
-          <p className="text-2xl font-bold text-green-400">Rp {stats.offlineRevenue.toLocaleString("id-ID")}</p>
+          <p className="text-sm text-slate-400">Pendapatan Tip</p>
+          <p className="text-2xl font-bold text-purple-400">Rp {stats.tipRevenue.toLocaleString("id-ID")}</p>
+        </div>
+        <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
+          <p className="text-sm text-slate-400">Pendapatan Online</p>
+          <p className="text-2xl font-bold text-cyan-400">Rp {stats.onlineRevenue.toLocaleString("id-ID")}</p>
         </div>
       </div>
 
