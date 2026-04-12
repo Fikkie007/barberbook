@@ -58,6 +58,7 @@ interface FormData {
   bookingDate: Date | undefined;
   bookingTime: string;
   notes: string;
+  tipAmount: number;
 }
 
 export default function OfflineBookingDialog({
@@ -82,6 +83,7 @@ export default function OfflineBookingDialog({
     bookingDate: new Date(), // Default to today
     bookingTime: "",
     notes: "",
+    tipAmount: 0,
   });
 
   const selectedService = services.find((s) => s.id === formData.serviceId);
@@ -172,6 +174,7 @@ export default function OfflineBookingDialog({
       bookingDate: new Date(),
       bookingTime: "",
       notes: "",
+      tipAmount: 0,
     });
     setError(null);
   };
@@ -250,7 +253,7 @@ export default function OfflineBookingDialog({
           bookingDate: formData.bookingDate.toISOString(),
           bookingTime: formData.bookingTime,
           notes: formData.notes || null,
-          totalPrice: selectedService?.price || 0,
+          tipAmount: formData.tipAmount || 0,
           source: "OFFLINE",
         }),
       });
@@ -488,6 +491,19 @@ export default function OfflineBookingDialog({
                   />
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-slate-300 text-xs">Tip (Rp)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={formData.tipAmount || ""}
+                  onChange={(e) => setFormData({ ...formData, tipAmount: parseInt(e.target.value) || 0 })}
+                  placeholder="0"
+                  className="border-slate-600 bg-slate-700/50 text-white h-9"
+                />
+                <p className="text-xs text-slate-500">Tip untuk barber (opsional)</p>
+              </div>
             </div>
           </div>
 
@@ -495,16 +511,28 @@ export default function OfflineBookingDialog({
           <div className="px-6 py-4 border-t border-slate-700 bg-slate-800/50">
             {/* Price Summary */}
             {selectedService && (
-              <div className="mb-3 flex items-center justify-between rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-300 text-sm">Layanan:</span>
-                  <span className="text-white font-medium">{selectedService.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-300 text-sm">Total:</span>
-                  <span className="text-amber-400 font-bold">
-                    Rp {selectedService.price.toLocaleString("id-ID")}
-                  </span>
+              <div className="mb-3 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-300 text-sm">Layanan:</span>
+                    <span className="text-white font-medium">{selectedService.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {formData.tipAmount > 0 ? (
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400">
+                          Rp {selectedService.price.toLocaleString("id-ID")} + Rp {formData.tipAmount.toLocaleString("id-ID")} tip
+                        </div>
+                        <span className="text-amber-400 font-bold">
+                          Rp {(selectedService.price + formData.tipAmount).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-amber-400 font-bold">
+                        Rp {selectedService.price.toLocaleString("id-ID")}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

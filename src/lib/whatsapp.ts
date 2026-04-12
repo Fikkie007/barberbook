@@ -58,8 +58,18 @@ export function generateBookingConfirmationMessage(data: {
   barberName?: string;
   date: string;
   time: string;
-  price: number;
+  servicePrice: number;
+  tipAmount: number;
+  totalPrice: number;
 }): string {
+  // Build price breakdown - show breakdown only if tip exists
+  const priceSection = data.tipAmount > 0
+    ? `💰 Layanan: Rp ${data.servicePrice.toLocaleString("id-ID")}
+   💵 Tip: Rp ${data.tipAmount.toLocaleString("id-ID")}
+   ━━━━━━━━━━━━━━
+   💰 Total: Rp ${data.totalPrice.toLocaleString("id-ID")}`
+    : `💰 Total: Rp ${data.totalPrice.toLocaleString("id-ID")}`;
+
   return `💈 *KONFIRMASI BOOKING*
 
 Halo ${data.customerName}!
@@ -70,7 +80,7 @@ Booking Anda di *${data.shopName}* telah diterima:
 ⏰ Waktu: ${data.time}
 ✂️ Layanan: ${data.serviceName}
 ${data.barberName ? `👨 Barber: ${data.barberName}` : ""}
-💰 Total: Rp ${data.price.toLocaleString("id-ID")}
+${priceSection}
 
 Harap datang 10 menit sebelum jadwal. Terima kasih! 🙏`;
 }

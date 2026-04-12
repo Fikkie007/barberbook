@@ -110,6 +110,8 @@ model Booking {
   reminderSent     Boolean       @default(false)
   qstashMessageId  String?
   totalPrice      Int           @default(0)
+  servicePrice    Int           @default(0)  // base service price at booking time
+  tipAmount       Int           @default(0)  // tip amount in rupiah
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

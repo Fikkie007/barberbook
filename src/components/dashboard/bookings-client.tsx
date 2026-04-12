@@ -32,6 +32,8 @@ interface BookingWithRelations {
   status: string;
   source: string;
   totalPrice: number;
+  servicePrice: number;
+  tipAmount: number;
   service: { name: string };
   barber: { name: string } | null;
 }
