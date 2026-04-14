@@ -56,6 +56,15 @@ export async function POST(request: NextRequest) {
       where: { id: bookingId },
       include: {
         service: true,
+        package: {
+          include: {
+            services: {
+              include: {
+                service: true,
+              },
+            },
+          },
+        },
         shop: true,
       },
     });
@@ -85,11 +94,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Get service/package name
+    const itemName = booking.service?.name || booking.package?.name || "Layanan";
+
     // Generate reminder message
     const message = generateBookingReminderMessage({
       customerName: booking.customerName,
       shopName: booking.shop.name,
-      serviceName: booking.service.name,
+      serviceName: itemName,
       time: booking.bookingTime,
     });
 

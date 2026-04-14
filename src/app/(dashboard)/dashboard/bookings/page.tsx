@@ -36,18 +36,45 @@ export default async function BookingsPage({
     where.status = selectedStatus;
   }
 
-  // Get bookings, services, barbers, and shop data
-  const [bookings, services, barbers, shop] = await Promise.all([
+  // Get bookings, services, packages, barbers, and shop data
+  const [bookings, services, packages, barbers, shop] = await Promise.all([
     // Bookings
     prisma.booking.findMany({
       where,
-      include: { service: true, barber: true },
+      include: {
+        service: true,
+        package: {
+          include: {
+            services: {
+              include: {
+                service: true,
+              },
+            },
+          },
+        },
+        barber: true,
+      },
       orderBy: [{ bookingDate: "desc" }, { bookingTime: "desc" }],
     }),
     // Services
     prisma.service.findMany({
       where: { shopId: activeShopId, isActive: true },
       select: { id: true, name: true, price: true, duration: true },
+      orderBy: { sortOrder: "asc" },
+    }),
+    // Packages
+    prisma.servicePackage.findMany({
+      where: { shopId: activeShopId, isActive: true },
+      include: {
+        services: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            service: {
+              select: { id: true, name: true, price: true, duration: true },
+            },
+          },
+        },
+      },
       orderBy: { sortOrder: "asc" },
     }),
     // Barbers
@@ -74,6 +101,7 @@ export default async function BookingsPage({
       shopId={activeShopId}
       initialBookings={bookings}
       services={services}
+      packages={packages}
       barbers={barbers}
       workingDays={shop?.workingDays || []}
       shopHours={{

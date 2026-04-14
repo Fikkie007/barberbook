@@ -33,6 +33,18 @@ export default async function BookingPage({ params }: BookingPageProps) {
         where: { isActive: true },
         orderBy: { sortOrder: "asc" },
       },
+      packages: {
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+        include: {
+          services: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              service: true,
+            },
+          },
+        },
+      },
       barbers: {
         where: { isActive: true },
       },
@@ -127,6 +139,24 @@ export default async function BookingPage({ params }: BookingPageProps) {
               description: s.description,
               price: s.price,
               duration: s.duration,
+            })),
+            packages: shop.packages.map((p) => ({
+              id: p.id,
+              name: p.name,
+              description: p.description,
+              price: p.price,
+              duration: p.duration,
+              services: p.services.map((ps) => ({
+                id: ps.id,
+                serviceId: ps.serviceId,
+                sortOrder: ps.sortOrder,
+                service: {
+                  id: ps.service.id,
+                  name: ps.service.name,
+                  price: ps.service.price,
+                  duration: ps.service.duration,
+                },
+              })),
             })),
             barbers: shop.barbers.map((b) => ({
               id: b.id,

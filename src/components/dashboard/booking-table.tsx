@@ -31,7 +31,8 @@ interface BookingWithRelations {
   totalPrice: number;
   servicePrice: number;
   tipAmount: number;
-  service: { name: string };
+  service: { name: string } | null;
+  package: { name: string; services: { service: { name: string } }[] } | null;
   barber: { name: string } | null;
 }
 
@@ -113,7 +114,14 @@ export default function BookingTable({ bookings, onStatusUpdate }: BookingTableP
                 <p className="text-sm text-slate-400">{booking.customerPhone}</p>
               </div>
             </TableCell>
-            <TableCell className="text-slate-300">{booking.service.name}</TableCell>
+            <TableCell className="text-slate-300">
+              {booking.service?.name || booking.package?.name || "-"}
+              {booking.package && (
+                <span className="text-xs text-slate-400 block">
+                  ({booking.package.services.map(ps => ps.service.name).join(", ")})
+                </span>
+              )}
+            </TableCell>
             <TableCell className="text-slate-300">
               {booking.barber?.name || "-"}
             </TableCell>

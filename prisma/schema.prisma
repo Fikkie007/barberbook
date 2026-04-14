@@ -44,6 +44,7 @@ model Shop {
   owner           User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   bookings        Booking[]
   services        Service[]
+  packages        ServicePackage[]
   barbers         Barber[]
   workingDays     WorkingDay[]
   createdAt       DateTime   @default(now())
@@ -64,11 +65,47 @@ model Service {
   isActive    Boolean   @default(true)
   sortOrder   Int       @default(0)
   bookings    Booking[]
+  packages    PackageService[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@index([shopId])
   @@map("services")
+}
+
+// ServicePackage - Paket layanan bundle
+model ServicePackage {
+  id          String   @id @default(cuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  price       Int      // harga paket dalam rupiah
+  duration    Int      @default(60) // total durasi dalam menit
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  services    PackageService[]
+  bookings    Booking[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([shopId])
+  @@map("service_packages")
+}
+
+// PackageService - Junction table untuk paket dan layanan
+model PackageService {
+  id          String   @id @default(cuid())
+  packageId   String
+  serviceId   String
+  sortOrder   Int      @default(0) // urutan layanan dalam paket
+  package     ServicePackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  service     Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([packageId])
+  @@index([serviceId])
+  @@map("package_services")
 }
 
 // Barber - Tukang cukur
@@ -93,8 +130,10 @@ model Booking {
   id              String        @id @default(cuid())
   shopId          String
   shop            Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  serviceId       String
-  service         Service       @relation(fields: [serviceId], references: [id])
+  serviceId       String?       // optional - null for package bookings
+  service         Service?      @relation(fields: [serviceId], references: [id])
+  packageId       String?       // optional - null for single service bookings
+  package         ServicePackage? @relation(fields: [packageId], references: [id])
   barberId        String?
   barber          Barber?       @relation(fields: [barberId], references: [id])
   customerName    String
@@ -110,7 +149,7 @@ model Booking {
   reminderSent     Boolean       @default(false)
   qstashMessageId  String?
   totalPrice      Int           @default(0)
-  servicePrice    Int           @default(0)  // base service price at booking time
+  servicePrice    Int           @default(0)  // base service/package price at booking time
   tipAmount       Int           @default(0)  // tip amount in rupiah
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -118,6 +157,7 @@ model Booking {
   @@index([shopId])
   @@index([shopId, bookingDate])
   @@index([shopId, status])
+  @@index([packageId])
   @@map("bookings")
 }
 

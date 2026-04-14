@@ -6,9 +6,10 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 
 - 📅 **Booking Online 24/7** - Pelanggan bisa booking kapan saja
 - 🏃 **Offline Booking** - Catat booking walk-in/customer langsung datang
+- 📦 **Paket Layanan** - Buat bundle paket dari beberapa layanan dengan harga spesial
 - 💬 **Notifikasi WhatsApp Otomatis** - Konfirmasi, reminder, dan notifikasi otomatis
 - 🏪 **Multi-tenant** - Setiap toko memiliki subdomain unik
-- 📊 **Dashboard Owner** - Kelola booking, layanan, dan barber dengan breakdown revenue online vs offline
+- 📊 **Dashboard Owner** - Kelola booking, layanan, paket, dan barber dengan breakdown revenue online vs offline
 - 📱 **Mobile Friendly** - Responsif di semua perangkat
 
 ## Tech Stack
@@ -118,6 +119,22 @@ Owner bisa mencatat booking dari customer yang datang langsung (walk-in):
 2. Isi form: nama customer, telepon, service, barber, tanggal/waktu
 3. Sistem akan tracking booking sebagai `source: OFFLINE`
 4. WhatsApp notifikasi tetap bisa dikirim jika nomor valid
+
+### Service Packages (Paket Layanan)
+
+Owner bisa membuat paket bundle dari beberapa layanan dengan harga spesial:
+
+1. Buka halaman "Layanan" di dashboard
+2. Klik tab "Paket" di bagian atas
+3. Klik tombol "Tambah Paket"
+4. Pilih layanan yang akan di-bundle, tentukan harga paket dan durasi
+5. Customer bisa memilih paket saat booking
+
+Keuntungan paket:
+- Harga lebih kompetitif (bundle discount)
+- Customer mendapatkan beberapa layanan dalam satu booking
+- Durasi total paket dihitung otomatis
+- Booking history mencatat paket yang dipilih
 
 ## Demo Account
 

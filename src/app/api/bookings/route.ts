@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     const {
       shopId,
       serviceId,
+      packageId,
       barberId,
       customerName,
       customerPhone,
@@ -25,10 +26,24 @@ export async function POST(request: NextRequest) {
       source,
     } = body;
 
-    // Validate required fields
-    if (!shopId || !serviceId || !customerName || !customerPhone || !bookingDate || !bookingTime) {
+    // Validate required fields - must have either serviceId OR packageId
+    if (!shopId || !customerName || !customerPhone || !bookingDate || !bookingTime) {
       return NextResponse.json(
         { error: "Data tidak lengkap" },
+        { status: 400 }
+      );
+    }
+
+    if (!serviceId && !packageId) {
+      return NextResponse.json(
+        { error: "Layanan atau paket harus dipilih" },
+        { status: 400 }
+      );
+    }
+
+    if (serviceId && packageId) {
+      return NextResponse.json(
+        { error: "Pilih layanan atau paket, tidak boleh kedua-duanya" },
         { status: 400 }
       );
     }
@@ -37,7 +52,8 @@ export async function POST(request: NextRequest) {
     const shop = await prisma.shop.findFirst({
       where: { id: shopId, isActive: true },
       include: {
-        services: { where: { id: serviceId } },
+        services: serviceId ? { where: { id: serviceId } } : false,
+        packages: packageId ? { where: { id: packageId }, include: { services: { include: { service: true } } } } : false,
         barbers: barberId ? { where: { id: barberId } } : false,
       },
     });
@@ -46,8 +62,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Toko tidak ditemukan" }, { status: 404 });
     }
 
-    if (shop.services.length === 0) {
-      return NextResponse.json({ error: "Layanan tidak ditemukan" }, { status: 404 });
+    // Validate service or package
+    let servicePrice: number;
+    let serviceName: string;
+    let duration: number;
+
+    if (serviceId) {
+      if (shop.services.length === 0) {
+        return NextResponse.json({ error: "Layanan tidak ditemukan" }, { status: 404 });
+      }
+      servicePrice = shop.services[0].price;
+      serviceName = shop.services[0].name;
+      duration = shop.services[0].duration;
+    } else if (packageId) {
+      if (!shop.packages || shop.packages.length === 0) {
+        return NextResponse.json({ error: "Paket tidak ditemukan" }, { status: 404 });
+      }
+      const pkg = shop.packages[0];
+      servicePrice = pkg.price;
+      serviceName = pkg.name;
+      duration = pkg.duration;
+    } else {
+      return NextResponse.json({ error: "Layanan tidak valid" }, { status: 400 });
     }
 
     // Validate barberId - must be null if not specified
@@ -70,7 +106,6 @@ export async function POST(request: NextRequest) {
     const bookingSource = source === "OFFLINE" ? "OFFLINE" : "ONLINE";
 
     // Calculate pricing
-    const servicePrice = shop.services[0].price;
     const tip = tipAmount || 0;
     const totalPrice = servicePrice + tip;
 
@@ -78,7 +113,8 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.create({
       data: {
         shopId,
-        serviceId,
+        serviceId: serviceId || null,
+        packageId: packageId || null,
         barberId: validBarberId,
         customerName,
         customerPhone,
@@ -94,16 +130,33 @@ export async function POST(request: NextRequest) {
       },
       include: {
         service: true,
+        package: {
+          include: {
+            services: {
+              include: {
+                service: true,
+              },
+            },
+          },
+        },
         barber: true,
       },
     });
 
     // Send WhatsApp notification
     try {
+      // Get the service/package name for the message
+      let itemNames: string[];
+      if (booking.package) {
+        itemNames = booking.package.services.map(ps => ps.service.name);
+      } else {
+        itemNames = [serviceName];
+      }
+
       const message = generateBookingConfirmationMessage({
         customerName: booking.customerName,
         shopName: shop.name,
-        serviceName: booking.service.name,
+        serviceName: itemNames.join(", "),
         barberName: booking.barber?.name,
         date: format(booking.bookingDate, "EEEE, d MMMM yyyy", { locale: id }),
         time: booking.bookingTime,
@@ -168,7 +221,7 @@ export async function POST(request: NextRequest) {
       booking: {
         id: booking.id,
         customerName: booking.customerName,
-        serviceName: booking.service.name,
+        serviceName: booking.package ? booking.package.name : (booking.service?.name || serviceName),
         bookingDate: booking.bookingDate,
         bookingTime: booking.bookingTime,
         status: booking.status,
@@ -212,6 +265,15 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         service: true,
+        package: {
+          include: {
+            services: {
+              include: {
+                service: true,
+              },
+            },
+          },
+        },
         barber: true,
       },
       orderBy: [{ bookingDate: "asc" }, { bookingTime: "asc" }],

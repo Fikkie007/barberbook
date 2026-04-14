@@ -23,7 +23,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Service, Barber, WorkingDayData } from "@/types";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Service, Barber, WorkingDayData, ServicePackage } from "@/types";
+
+interface PackageServiceItem {
+  id: string;
+  serviceId: string;
+  sortOrder: number;
+  service: Pick<Service, "id" | "name" | "price" | "duration">;
+}
+
+interface PackageItem extends Pick<ServicePackage, "id" | "name" | "description" | "price" | "duration"> {
+  services: PackageServiceItem[];
+}
 
 interface BookingFormProps {
   shop: {
@@ -37,6 +49,7 @@ interface BookingFormProps {
       Service,
       "id" | "name" | "description" | "price" | "duration"
     >[];
+    packages: PackageItem[];
     barbers: Pick<Barber, "id" | "name">[];
     workingDays: WorkingDayData[];
   };
@@ -44,6 +57,7 @@ interface BookingFormProps {
 
 interface FormData {
   serviceId: string;
+  packageId: string;
   barberId: string;
   customerName: string;
   customerPhone: string;
@@ -52,6 +66,7 @@ interface FormData {
   bookingTime: string;
   notes: string;
   tipAmount: number;
+  selectionType: "service" | "package";
 }
 
 const STEPS = [
@@ -69,6 +84,7 @@ export default function BookingForm({ shop }: BookingFormProps) {
 
   const [formData, setFormData] = useState<FormData>({
     serviceId: "",
+    packageId: "",
     barberId: "",
     customerName: "",
     customerPhone: "",
@@ -77,12 +93,20 @@ export default function BookingForm({ shop }: BookingFormProps) {
     bookingTime: "",
     notes: "",
     tipAmount: 0,
+    selectionType: "service",
   });
 
   const selectedService = shop.services.find(
     (s) => s.id === formData.serviceId,
   );
+  const selectedPackage = shop.packages.find(
+    (p) => p.id === formData.packageId,
+  );
   const selectedBarber = shop.barbers.find((b) => b.id === formData.barberId);
+
+  // Get the selected item (service or package)
+  const selectedItem = formData.selectionType === "package" ? selectedPackage : selectedService;
+  const itemPrice = selectedItem?.price || 0;
 
   // Generate time slots based on shop hours
   const generateTimeSlots = () => {
@@ -147,7 +171,9 @@ export default function BookingForm({ shop }: BookingFormProps) {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return !!formData.serviceId;
+        return formData.selectionType === "package"
+          ? !!formData.packageId
+          : !!formData.serviceId;
       case 2:
         return !!formData.bookingDate && !!formData.bookingTime;
       case 3:
@@ -181,7 +207,8 @@ export default function BookingForm({ shop }: BookingFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shopId: shop.id,
-          serviceId: formData.serviceId,
+          serviceId: formData.selectionType === "service" ? formData.serviceId : null,
+          packageId: formData.selectionType === "package" ? formData.packageId : null,
           barberId:
             formData.barberId && formData.barberId !== ""
               ? formData.barberId
@@ -211,6 +238,10 @@ export default function BookingForm({ shop }: BookingFormProps) {
   };
 
   if (success) {
+    const itemName = formData.selectionType === "package"
+      ? selectedPackage?.name
+      : selectedService?.name;
+
     return (
       <Card className="border-slate-700 bg-slate-800/50 backdrop-blur">
         <CardContent className="pt-6 text-center">
@@ -244,17 +275,17 @@ export default function BookingForm({ shop }: BookingFormProps) {
                   })}
               </p>
               <p>Waktu: {formData.bookingTime}</p>
-              <p>Layanan: {selectedService?.name}</p>
+              <p>{formData.selectionType === "package" ? "Paket" : "Layanan"}: {itemName}</p>
               {formData.tipAmount > 0 ? (
                 <div className="pt-2 border-t border-slate-600">
-                  <p>Layanan: Rp {(selectedService?.price || 0).toLocaleString("id-ID")}</p>
+                  <p>{formData.selectionType === "package" ? "Paket" : "Layanan"}: Rp {itemPrice.toLocaleString("id-ID")}</p>
                   <p>Tip: Rp {formData.tipAmount.toLocaleString("id-ID")}</p>
                   <p className="font-semibold text-white">
-                    Total: Rp {((selectedService?.price || 0) + formData.tipAmount).toLocaleString("id-ID")}
+                    Total: Rp {(itemPrice + formData.tipAmount).toLocaleString("id-ID")}
                   </p>
                 </div>
               ) : (
-                <p>Total: Rp {(selectedService?.price || 0).toLocaleString("id-ID")}</p>
+                <p>Total: Rp {itemPrice.toLocaleString("id-ID")}</p>
               )}
             </div>
           </div>
@@ -316,42 +347,136 @@ export default function BookingForm({ shop }: BookingFormProps) {
             </div>
           )}
 
-          {/* Step 1: Select Service */}
+          {/* Step 1: Select Service or Package */}
           {currentStep === 1 && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {shop.services.map((service) => (
-                <button
-                  key={service.id}
-                  onClick={() => handleInputChange("serviceId", service.id)}
-                  className={`rounded-lg border p-4 text-left transition-all ${
-                    formData.serviceId === service.id
-                      ? "border-amber-500 bg-amber-500/10"
-                      : "border-slate-600 bg-slate-700/30 hover:border-slate-500"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-white">
-                        {service.name}
-                      </h3>
-                      {service.description && (
-                        <p className="mt-1 text-sm text-slate-400">
-                          {service.description}
-                        </p>
-                      )}
-                      <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
-                        <span>{service.duration} menit</span>
-                      </div>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="bg-amber-500/20 text-amber-400"
+            <div className="space-y-4">
+              {/* Toggle between Services and Packages */}
+              <Tabs
+                value={formData.selectionType}
+                onValueChange={(value) => {
+                  setFormData({
+                    ...formData,
+                    selectionType: value as "service" | "package",
+                    serviceId: value === "service" ? "" : formData.serviceId,
+                    packageId: value === "package" ? "" : formData.packageId,
+                  });
+                }}
+                className="w-full"
+              >
+                <TabsList className="bg-transparent border-none p-0 gap-2">
+                  <TabsTrigger
+                    value="service"
+                    className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900 text-slate-400 hover:text-slate-200 px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    Layanan
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="package"
+                    className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900 text-slate-400 hover:text-slate-200 px-4 py-2 rounded-lg font-medium transition-colors"
+                    disabled={shop.packages.length === 0}
+                  >
+                    Paket
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {/* Services Grid */}
+              {formData.selectionType === "service" && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {shop.services.map((service) => (
+                    <button
+                      key={service.id}
+                      onClick={() => handleInputChange("serviceId", service.id)}
+                      className={`rounded-lg border p-4 text-left transition-all ${
+                        formData.serviceId === service.id
+                          ? "border-amber-500 bg-amber-500/10"
+                          : "border-slate-600 bg-slate-700/30 hover:border-slate-500"
+                      }`}
                     >
-                      Rp {service.price.toLocaleString("id-ID")}
-                    </Badge>
-                  </div>
-                </button>
-              ))}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-white">
+                            {service.name}
+                          </h3>
+                          {service.description && (
+                            <p className="mt-1 text-sm text-slate-400">
+                              {service.description}
+                            </p>
+                          )}
+                          <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
+                            <span>{service.duration} menit</span>
+                          </div>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="bg-amber-500/20 text-amber-400"
+                        >
+                          Rp {service.price.toLocaleString("id-ID")}
+                        </Badge>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Packages Grid */}
+              {formData.selectionType === "package" && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {shop.packages.map((pkg) => (
+                    <button
+                      key={pkg.id}
+                      onClick={() => handleInputChange("packageId", pkg.id)}
+                      className={`rounded-lg border p-4 text-left transition-all ${
+                        formData.packageId === pkg.id
+                          ? "border-amber-500 bg-amber-500/10"
+                          : "border-slate-600 bg-slate-700/30 hover:border-slate-500"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-white">
+                            {pkg.name}
+                          </h3>
+                          {pkg.description && (
+                            <p className="mt-1 text-sm text-slate-400">
+                              {pkg.description}
+                            </p>
+                          )}
+                          <ul className="mt-2 text-sm text-slate-400 space-y-1">
+                            {pkg.services.map((ps) => (
+                              <li key={ps.id} className="flex items-center gap-1">
+                                <span className="text-amber-400">•</span>
+                                {ps.service.name}
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
+                            <span>{pkg.duration} menit</span>
+                          </div>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="bg-amber-500/20 text-amber-400"
+                        >
+                          Rp {pkg.price.toLocaleString("id-ID")}
+                        </Badge>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {formData.selectionType === "service" && shop.services.length === 0 && (
+                <div className="rounded-lg border border-slate-600 bg-slate-700/30 p-4 text-center text-slate-400">
+                  Belum ada layanan tersedia
+                </div>
+              )}
+
+              {formData.selectionType === "package" && shop.packages.length === 0 && (
+                <div className="rounded-lg border border-slate-600 bg-slate-700/30 p-4 text-center text-slate-400">
+                  Belum ada paket tersedia
+                </div>
+              )}
             </div>
           )}
 
@@ -534,9 +659,17 @@ export default function BookingForm({ shop }: BookingFormProps) {
                     <span className="text-white">{shop.name}</span>
                   </div>
                   <div className="flex justify-between text-slate-300">
-                    <span>Layanan</span>
-                    <span className="text-white">{selectedService?.name}</span>
+                    <span>{formData.selectionType === "package" ? "Paket" : "Layanan"}</span>
+                    <span className="text-white">
+                      {formData.selectionType === "package" ? selectedPackage?.name : selectedService?.name}
+                    </span>
                   </div>
+                  {formData.selectionType === "package" && selectedPackage && (
+                    <div className="text-slate-400 text-xs">
+                      <span>Termasuk: </span>
+                      {selectedPackage.services.map(ps => ps.service.name).join(", ")}
+                    </div>
+                  )}
                   {selectedBarber && (
                     <div className="flex justify-between text-slate-300">
                       <span>Barber</span>
@@ -576,9 +709,9 @@ export default function BookingForm({ shop }: BookingFormProps) {
                     {formData.tipAmount > 0 ? (
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-300">Layanan</span>
+                          <span className="text-slate-300">{formData.selectionType === "package" ? "Paket" : "Layanan"}</span>
                           <span className="text-white">
-                            Rp {selectedService?.price.toLocaleString("id-ID")}
+                            Rp {itemPrice.toLocaleString("id-ID")}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm">
@@ -590,7 +723,7 @@ export default function BookingForm({ shop }: BookingFormProps) {
                         <div className="flex justify-between text-base font-semibold pt-2 border-t border-slate-600">
                           <span className="text-white">Total</span>
                           <span className="text-amber-400">
-                            Rp {((selectedService?.price || 0) + formData.tipAmount).toLocaleString("id-ID")}
+                            Rp {(itemPrice + formData.tipAmount).toLocaleString("id-ID")}
                           </span>
                         </div>
                       </div>
@@ -598,7 +731,7 @@ export default function BookingForm({ shop }: BookingFormProps) {
                       <div className="flex justify-between text-base font-semibold">
                         <span className="text-white">Total</span>
                         <span className="text-amber-400">
-                          Rp {(selectedService?.price || 0).toLocaleString("id-ID")}
+                          Rp {itemPrice.toLocaleString("id-ID")}
                         </span>
                       </div>
                     )}

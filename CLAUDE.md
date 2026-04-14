@@ -86,10 +86,11 @@ For local subdomain testing:
 - PostgreSQL via Prisma ORM
 - Prisma client singleton in `src/lib/prisma.ts` (prevents multiple instances in dev)
 - Generated Prisma types in `src/generated/prisma/`
-- Schema includes: User, Shop, Service, Barber, Booking, WorkingDay
+- Schema includes: User, Shop, Service, ServicePackage, PackageService, Barber, Booking, WorkingDay
 - Booking model has reminder tracking fields: `whatsappSent`, `confirmationSent`, `reminderSent`, `qstashMessageId`
 - Booking model has `source` field (`ONLINE` or `OFFLINE`) to track booking origin
-- Booking model has pricing fields: `servicePrice` (base service price at booking time), `tipAmount` (tip in rupiah), `totalPrice` (calculated as servicePrice + tipAmount)
+- Booking model has `serviceId` (optional) for single service bookings and `packageId` (optional) for package bookings
+- Booking model has pricing fields: `servicePrice` (base service/package price at booking time), `tipAmount` (tip in rupiah), `totalPrice` (calculated as servicePrice + tipAmount)
 - Seed file creates demo shop with services/barbers (`prisma/seed.ts`)
 
 **Data conventions:**
@@ -97,6 +98,7 @@ For local subdomain testing:
 - Booking times stored as strings in "HH:mm" format (e.g., "09:00")
 - Working days: `dayOfWeek` uses 0=Sunday, 1=Monday, etc.
 - Phone numbers use Indonesian format (prefix with "62" for WhatsApp)
+- Service packages: `PackageService` junction table links packages to services with `sortOrder` for ordering; package price is independent of individual service prices (allows discounts)
 
 **Demo accounts after seeding:**
 - Owner: `owner@demo.com` / `password123`
@@ -108,10 +110,11 @@ For local subdomain testing:
 All API routes are in `src/app/api/`:
 - `auth/[...nextauth]/` - NextAuth handlers
 - `auth/register/` - User registration
-- `bookings/` - CRUD for bookings (public create, owner manage; supports `source: ONLINE|OFFLINE` parameter)
+- `bookings/` - CRUD for bookings (public create, owner manage; supports `source: ONLINE|OFFLINE` parameter; supports single service or package bookings)
 - `bookings/send-reminder/` - QStash webhook for scheduled reminders
 - `cron/` - Cron endpoint for processing pending notifications (call hourly)
 - `services/` - Shop services management
+- `packages/` - Shop packages management (bundle multiple services)
 - `barbers/` - Shop barbers management
 - `shops/` - Shop lookup by slug
 
@@ -147,15 +150,18 @@ docker run -d -p 4000:3000 upstash/qstash-local
 
 - Stats cards show booking counts and revenue totals
 - Revenue chart displays monthly breakdown by source (online vs offline) using stacked area chart
-- Booking table shows all bookings with service, barber, and source info
+- Booking table shows all bookings with service/package, barber, and source info
+- Services page has tabs for managing individual services and service packages
 - Offline booking dialog (`src/components/dashboard/offline-booking-dialog.tsx`) allows owners to create walk-in bookings with `source: OFFLINE`
+- Packages management (`src/components/dashboard/packages-client.tsx`) allows creating bundles of multiple services with discounted pricing
 
 ### UI Components
 
 - Uses shadcn/ui components in `src/components/ui/`
 - Layout components in `src/components/layout/`
 - Feature components in `src/components/booking/` and `src/components/dashboard/`
-- Key dashboard components: `stats-card.tsx`, `booking-table.tsx`, `revenue-chart.tsx`, `offline-booking-dialog.tsx`
+- Key dashboard components: `stats-card.tsx`, `booking-table.tsx`, `revenue-chart.tsx`, `offline-booking-dialog.tsx`, `packages-client.tsx`, `services-client.tsx`
+- Key UI components: `tabs.tsx` for tabbed navigation (services/packages tabs)
 - Form validation with react-hook-form + Zod
 
 ## Environment Variables
