@@ -4,11 +4,25 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get("shopId");
 
     if (!shopId) {
       return NextResponse.json({ error: "Shop ID required" }, { status: 400 });
+    }
+
+    // Verify shop belongs to user
+    const shop = await prisma.shop.findFirst({
+      where: { id: shopId, ownerId: session.user.id },
+    });
+
+    if (!shop) {
+      return NextResponse.json({ error: "Shop not found" }, { status: 404 });
     }
 
     const packages = await prisma.servicePackage.findMany({
@@ -51,6 +65,40 @@ export async function POST(request: NextRequest) {
 
     if (!shop) {
       return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    // Validate that all serviceIds belong to the same shop and are active
+    if (serviceIds && serviceIds.length > 0) {
+      const services = await prisma.service.findMany({
+        where: { id: { in: serviceIds } },
+        select: { id: true, shopId: true, isActive: true },
+      });
+
+      // Check all services exist
+      if (services.length !== serviceIds.length) {
+        return NextResponse.json(
+          { error: "Some services not found" },
+          { status: 400 }
+        );
+      }
+
+      // Check all services belong to the same shop
+      const invalidShopServices = services.filter(s => s.shopId !== shopId);
+      if (invalidShopServices.length > 0) {
+        return NextResponse.json(
+          { error: "Services must belong to the same shop" },
+          { status: 400 }
+        );
+      }
+
+      // Check all services are active
+      const inactiveServices = services.filter(s => !s.isActive);
+      if (inactiveServices.length > 0) {
+        return NextResponse.json(
+          { error: "Cannot include inactive services in a package" },
+          { status: 400 }
+        );
+      }
     }
 
     // Get max sort order
@@ -112,6 +160,42 @@ export async function PUT(request: NextRequest) {
 
     if (!existingPackage || existingPackage.shop.ownerId !== session.user.id) {
       return NextResponse.json({ error: "Package not found" }, { status: 404 });
+    }
+
+    const shopId = existingPackage.shopId;
+
+    // Validate that all serviceIds belong to the same shop and are active
+    if (serviceIds && serviceIds.length > 0) {
+      const services = await prisma.service.findMany({
+        where: { id: { in: serviceIds } },
+        select: { id: true, shopId: true, isActive: true },
+      });
+
+      // Check all services exist
+      if (services.length !== serviceIds.length) {
+        return NextResponse.json(
+          { error: "Some services not found" },
+          { status: 400 }
+        );
+      }
+
+      // Check all services belong to the same shop
+      const invalidShopServices = services.filter(s => s.shopId !== shopId);
+      if (invalidShopServices.length > 0) {
+        return NextResponse.json(
+          { error: "Services must belong to the same shop" },
+          { status: 400 }
+        );
+      }
+
+      // Check all services are active
+      const inactiveServices = services.filter(s => !s.isActive);
+      if (inactiveServices.length > 0) {
+        return NextResponse.json(
+          { error: "Cannot include inactive services in a package" },
+          { status: 400 }
+        );
+      }
     }
 
     // Delete existing service relations and create new ones
