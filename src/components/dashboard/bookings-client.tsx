@@ -13,6 +13,22 @@ interface Service {
   duration: number;
 }
 
+interface PackageServiceItem {
+  id: string;
+  serviceId: string;
+  sortOrder: number;
+  service: Service;
+}
+
+interface ServicePackage {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  duration: number;
+  services: PackageServiceItem[];
+}
+
 interface Barber {
   id: string;
   name: string;
@@ -34,7 +50,8 @@ interface BookingWithRelations {
   totalPrice: number;
   servicePrice: number;
   tipAmount: number;
-  service: { name: string };
+  service: { name: string } | null;
+  package: { name: string; services: { service: { name: string } }[] } | null;
   barber: { name: string } | null;
 }
 
@@ -42,6 +59,7 @@ interface BookingsClientProps {
   shopId: string;
   initialBookings: BookingWithRelations[];
   services: Service[];
+  packages: ServicePackage[];
   barbers: Barber[];
   workingDays: WorkingDay[];
   shopHours: {
@@ -55,6 +73,7 @@ export default function BookingsClient({
   shopId,
   initialBookings,
   services,
+  packages,
   barbers,
   workingDays,
   shopHours,
@@ -197,6 +216,7 @@ export default function BookingsClient({
         onOpenChange={setDialogOpen}
         shopId={shopId}
         services={services}
+        packages={packages}
         barbers={barbers}
         workingDays={workingDays}
         shopHours={shopHours}

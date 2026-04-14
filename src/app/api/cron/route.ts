@@ -57,6 +57,15 @@ export async function GET(request: NextRequest) {
       },
       include: {
         service: true,
+        package: {
+          include: {
+            services: {
+              include: {
+                service: true,
+              },
+            },
+          },
+        },
         barber: true,
         shop: true,
       },
@@ -68,16 +77,20 @@ export async function GET(request: NextRequest) {
         ? "62" + booking.customerPhone.slice(1)
         : booking.customerPhone;
 
+      // Get service/package name
+      const itemName = booking.service?.name || booking.package?.name || "Layanan";
+      const itemPrice = booking.service?.price || booking.package?.price || 0;
+
       const message = generateBookingConfirmationMessage({
         customerName: booking.customerName,
         shopName: booking.shop.name,
-        serviceName: booking.service.name,
+        serviceName: itemName,
         barberName: booking.barber?.name,
         date: format(booking.bookingDate, "EEEE, d MMMM yyyy", { locale: id }),
         time: booking.bookingTime,
-        servicePrice: booking.servicePrice || booking.service.price,
+        servicePrice: booking.servicePrice || itemPrice,
         tipAmount: booking.tipAmount || 0,
-        totalPrice: booking.totalPrice || booking.service.price,
+        totalPrice: booking.totalPrice || itemPrice,
       });
 
       const result = await sendWhatsAppMessage({
@@ -119,6 +132,15 @@ export async function GET(request: NextRequest) {
       },
       include: {
         service: true,
+        package: {
+          include: {
+            services: {
+              include: {
+                service: true,
+              },
+            },
+          },
+        },
         shop: true,
       },
       take: 50, // Limit batch size
@@ -139,10 +161,13 @@ export async function GET(request: NextRequest) {
           ? "62" + booking.customerPhone.slice(1)
           : booking.customerPhone;
 
+        // Get service/package name
+        const itemName = booking.service?.name || booking.package?.name || "Layanan";
+
         const message = generateBookingReminderMessage({
           customerName: booking.customerName,
           shopName: booking.shop.name,
-          serviceName: booking.service.name,
+          serviceName: itemName,
           time: booking.bookingTime,
         });
 

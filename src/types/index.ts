@@ -1,7 +1,7 @@
-import { Booking, BookingStatus, BookingSource, Role, Service, Shop, Barber, User } from "@prisma/client";
+import { Booking, BookingStatus, BookingSource, Role, Service, Shop, Barber, User, ServicePackage, PackageService } from "@prisma/client";
 
 // Re-export types from Prisma
-export type { Booking, BookingStatus, BookingSource, Role, Service, Shop, Barber, User };
+export type { Booking, BookingStatus, BookingSource, Role, Service, Shop, Barber, User, ServicePackage, PackageService };
 
 // API Response types
 export interface ApiResponse<T = unknown> {
@@ -13,7 +13,8 @@ export interface ApiResponse<T = unknown> {
 
 // Booking form data
 export interface BookingFormData {
-  serviceId: string;
+  serviceId?: string;
+  packageId?: string;
   barberId?: string;
   customerName: string;
   customerPhone: string;
@@ -21,11 +22,13 @@ export interface BookingFormData {
   bookingDate: string;
   bookingTime: string;
   notes?: string;
+  tipAmount?: number;
 }
 
 // Shop with relations
 export interface ShopWithDetails extends Shop {
   services: Service[];
+  packages: ServicePackageWithServices[];
   barbers: Barber[];
   workingDays: WorkingDayData[];
 }
@@ -37,9 +40,17 @@ export interface WorkingDayData {
   closeTime: string | null;
 }
 
+// ServicePackage with services
+export interface ServicePackageWithServices extends ServicePackage {
+  services: (PackageService & {
+    service: Service;
+  })[];
+}
+
 // Booking with relations
 export interface BookingWithDetails extends Booking {
-  service: Service;
+  service: Service | null;
+  package: ServicePackageWithServices | null;
   barber: Barber | null;
   shop: Shop;
 }

@@ -16,13 +16,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Phone, Scissors, CalendarDays, Clock, User2, Mail, FileText } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { User, Phone, Scissors, CalendarDays, Clock, User2, Mail, FileText, Package } from "lucide-react";
 
 interface Service {
   id: string;
   name: string;
   price: number;
   duration: number;
+}
+
+interface PackageServiceItem {
+  id: string;
+  serviceId: string;
+  sortOrder: number;
+  service: Service;
+}
+
+interface ServicePackage {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  duration: number;
+  services: PackageServiceItem[];
 }
 
 interface Barber {
@@ -40,6 +57,7 @@ interface OfflineBookingDialogProps {
   onOpenChange: (open: boolean) => void;
   shopId: string;
   services: Service[];
+  packages: ServicePackage[];
   barbers: Barber[];
   workingDays: WorkingDay[];
   shopHours: {
@@ -54,11 +72,13 @@ interface FormData {
   customerPhone: string;
   customerEmail: string;
   serviceId: string;
+  packageId: string;
   barberId: string;
   bookingDate: Date | undefined;
   bookingTime: string;
   notes: string;
   tipAmount: number;
+  selectionType: "service" | "package";
 }
 
 export default function OfflineBookingDialog({
@@ -66,6 +86,7 @@ export default function OfflineBookingDialog({
   onOpenChange,
   shopId,
   services,
+  packages,
   barbers,
   workingDays,
   shopHours,
@@ -79,14 +100,19 @@ export default function OfflineBookingDialog({
     customerPhone: "",
     customerEmail: "",
     serviceId: "",
+    packageId: "",
     barberId: "",
     bookingDate: new Date(), // Default to today
     bookingTime: "",
     notes: "",
     tipAmount: 0,
+    selectionType: "service",
   });
 
   const selectedService = services.find((s) => s.id === formData.serviceId);
+  const selectedPackage = packages.find((p) => p.id === formData.packageId);
+  const selectedItem = formData.selectionType === "package" ? selectedPackage : selectedService;
+  const itemPrice = selectedItem?.price || 0;
 
   // Generate time slots based on shop hours
   const generateTimeSlots = () => {
@@ -170,11 +196,13 @@ export default function OfflineBookingDialog({
       customerPhone: "",
       customerEmail: "",
       serviceId: "",
+      packageId: "",
       barberId: "",
       bookingDate: new Date(),
       bookingTime: "",
       notes: "",
       tipAmount: 0,
+      selectionType: "service",
     });
     setError(null);
   };
@@ -205,8 +233,15 @@ export default function OfflineBookingDialog({
       return;
     }
 
-    if (!formData.serviceId) {
+    // Validate service or package selection
+    if (formData.selectionType === "service" && !formData.serviceId) {
       setError("Pilih layanan terlebih dahulu");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.selectionType === "package" && !formData.packageId) {
+      setError("Pilih paket terlebih dahulu");
       setLoading(false);
       return;
     }
@@ -245,7 +280,8 @@ export default function OfflineBookingDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shopId,
-          serviceId: formData.serviceId,
+          serviceId: formData.selectionType === "service" ? formData.serviceId : null,
+          packageId: formData.selectionType === "package" ? formData.packageId : null,
           barberId: formData.barberId || null,
           customerName: formData.customerName,
           customerPhone: formData.customerPhone,
@@ -337,41 +373,117 @@ export default function OfflineBookingDialog({
               </div>
             </div>
 
-            {/* Section: Service Selection */}
+            {/* Section: Service/Package Selection */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-400">
                 <Scissors className="h-4 w-4" />
-                <span>Layanan</span>
+                <span>Layanan / Paket</span>
               </div>
-              {services.length === 0 ? (
-                <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-sm text-yellow-400">
-                  Belum ada layanan. Tambah layanan di menu Layanan terlebih dahulu.
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <Label className="text-slate-300 text-xs">Pilih Layanan *</Label>
-                  <Select
-                    value={formData.serviceId}
-                    onValueChange={(value) => setFormData({ ...formData, serviceId: value ?? "" })}
+
+              {/* Toggle between Services and Packages */}
+              <Tabs
+                value={formData.selectionType}
+                onValueChange={(value) => {
+                  setFormData({
+                    ...formData,
+                    selectionType: value as "service" | "package",
+                    serviceId: value === "service" ? "" : formData.serviceId,
+                    packageId: value === "package" ? "" : formData.packageId,
+                  });
+                }}
+                className="w-full"
+              >
+                <TabsList className="bg-transparent border-none p-0 gap-2 w-full">
+                  <TabsTrigger
+                    value="service"
+                    className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900 text-slate-400 hover:text-slate-200 px-4 py-2 rounded-lg font-medium transition-colors flex-1"
                   >
-                    <SelectTrigger className="w-full border-slate-600 bg-slate-700/50 text-white h-9">
-                      <SelectValue placeholder="Pilih layanan">
-                        {selectedService ? `${selectedService.name} - Rp ${selectedService.price.toLocaleString("id-ID")}` : "Pilih layanan"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="border-slate-600 bg-slate-800 text-white [&_[data-slot=select-scroll-up-button]]:bg-slate-800 [&_[data-slot=select-scroll-down-button]]:bg-slate-800 [&_[data-slot=select-scroll-up-button]_svg]:text-slate-400 [&_[data-slot=select-scroll-down-button]_svg]:text-slate-400">
-                      {services.map((service) => (
-                        <SelectItem
-                          key={service.id}
-                          value={service.id}
-                          className="text-white bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 focus:bg-amber-500/20 focus:text-amber-400"
-                        >
-                          {service.name} - Rp {service.price.toLocaleString("id-ID")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    Layanan
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="package"
+                    className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900 text-slate-400 hover:text-slate-200 px-4 py-2 rounded-lg font-medium transition-colors flex-1"
+                    disabled={packages.length === 0}
+                  >
+                    Paket
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {/* Services Dropdown */}
+              {formData.selectionType === "service" && (
+                services.length === 0 ? (
+                  <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-sm text-yellow-400">
+                    Belum ada layanan. Tambah layanan di menu Layanan terlebih dahulu.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300 text-xs">Pilih Layanan *</Label>
+                    <Select
+                      value={formData.serviceId}
+                      onValueChange={(value) => setFormData({ ...formData, serviceId: value ?? "" })}
+                    >
+                      <SelectTrigger className="w-full border-slate-600 bg-slate-700/50 text-white h-9">
+                        <SelectValue placeholder="Pilih layanan">
+                          {selectedService ? `${selectedService.name} - Rp ${selectedService.price.toLocaleString("id-ID")}` : "Pilih layanan"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="border-slate-600 bg-slate-800 text-white [&_[data-slot=select-scroll-up-button]]:bg-slate-800 [&_[data-slot=select-scroll-down-button]]:bg-slate-800 [&_[data-slot=select-scroll-up-button]_svg]:text-slate-400 [&_[data-slot=select-scroll-down-button]_svg]:text-slate-400">
+                        {services.map((service) => (
+                          <SelectItem
+                            key={service.id}
+                            value={service.id}
+                            className="text-white bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 focus:bg-amber-500/20 focus:text-amber-400"
+                          >
+                            {service.name} - Rp {service.price.toLocaleString("id-ID")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )
+              )}
+
+              {/* Packages Dropdown */}
+              {formData.selectionType === "package" && (
+                packages.length === 0 ? (
+                  <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-sm text-yellow-400">
+                    Belum ada paket. Tambah paket di menu Paket terlebih dahulu.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300 text-xs">Pilih Paket *</Label>
+                    <Select
+                      value={formData.packageId}
+                      onValueChange={(value) => setFormData({ ...formData, packageId: value ?? "" })}
+                    >
+                      <SelectTrigger className="w-full border-slate-600 bg-slate-700/50 text-white h-9">
+                        <SelectValue placeholder="Pilih paket">
+                          {selectedPackage ? `${selectedPackage.name} - Rp ${selectedPackage.price.toLocaleString("id-ID")}` : "Pilih paket"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="border-slate-600 bg-slate-800 text-white [&_[data-slot=select-scroll-up-button]]:bg-slate-800 [&_[data-slot=select-scroll-down-button]]:bg-slate-800 [&_[data-slot=select-scroll-up-button]_svg]:text-slate-400 [&_[data-slot=select-scroll-down-button]_svg]:text-slate-400">
+                        {packages.map((pkg) => (
+                          <SelectItem
+                            key={pkg.id}
+                            value={pkg.id}
+                            className="text-white bg-slate-800 hover:bg-amber-500/20 hover:text-amber-400 focus:bg-amber-500/20 focus:text-amber-400"
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-medium">{pkg.name} - Rp {pkg.price.toLocaleString("id-ID")}</span>
+                              <span className="text-xs text-slate-400">{pkg.services.map(ps => ps.service.name).join(", ")}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedPackage && (
+                      <div className="text-xs text-slate-400">
+                        Termasuk: {selectedPackage.services.map(ps => ps.service.name).join(", ")}
+                      </div>
+                    )}
+                  </div>
+                )
               )}
             </div>
 
@@ -510,26 +622,26 @@ export default function OfflineBookingDialog({
           {/* Footer Section - Fixed */}
           <div className="px-6 py-4 border-t border-slate-700 bg-slate-800/50">
             {/* Price Summary */}
-            {selectedService && (
+            {selectedItem && (
               <div className="mb-3 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-300 text-sm">Layanan:</span>
-                    <span className="text-white font-medium">{selectedService.name}</span>
+                    <span className="text-slate-300 text-sm">{formData.selectionType === "package" ? "Paket:" : "Layanan:"}</span>
+                    <span className="text-white font-medium">{selectedItem.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {formData.tipAmount > 0 ? (
                       <div className="text-right">
                         <div className="text-xs text-slate-400">
-                          Rp {selectedService.price.toLocaleString("id-ID")} + Rp {formData.tipAmount.toLocaleString("id-ID")} tip
+                          Rp {itemPrice.toLocaleString("id-ID")} + Rp {formData.tipAmount.toLocaleString("id-ID")} tip
                         </div>
                         <span className="text-amber-400 font-bold">
-                          Rp {(selectedService.price + formData.tipAmount).toLocaleString("id-ID")}
+                          Rp {(itemPrice + formData.tipAmount).toLocaleString("id-ID")}
                         </span>
                       </div>
                     ) : (
                       <span className="text-amber-400 font-bold">
-                        Rp {selectedService.price.toLocaleString("id-ID")}
+                        Rp {itemPrice.toLocaleString("id-ID")}
                       </span>
                     )}
                   </div>
@@ -549,7 +661,7 @@ export default function OfflineBookingDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={loading || services.length === 0 || availableTimeSlots.length === 0 || !formData.customerName || !formData.customerPhone || !formData.serviceId || !formData.bookingTime}
+                disabled={loading || availableTimeSlots.length === 0 || !formData.customerName || !formData.customerPhone || !formData.bookingTime || (formData.selectionType === "service" && !formData.serviceId) || (formData.selectionType === "package" && !formData.packageId)}
                 className="flex-1 bg-amber-500 text-slate-900 hover:bg-amber-400 font-medium disabled:opacity-50"
               >
                 {loading ? (

@@ -62,7 +62,20 @@ export async function PATCH(
     const booking = await prisma.booking.update({
       where: { id },
       data: { status },
-      include: { shop: true, service: true, barber: true },
+      include: {
+        shop: true,
+        service: true,
+        package: {
+          include: {
+            services: {
+              include: {
+                service: true,
+              },
+            },
+          },
+        },
+        barber: true,
+      },
     });
 
     // Send WhatsApp notification for status changes
@@ -71,13 +84,16 @@ export async function PATCH(
         ? "62" + booking.customerPhone.slice(1)
         : booking.customerPhone;
 
+      // Get service/package name
+      const itemName = booking.service?.name || booking.package?.name || "Layanan";
+
       if (status === "COMPLETED") {
         await sendWhatsAppMessage({
           target: formattedPhone,
           message: generateBookingCompletedMessage({
             customerName: booking.customerName,
             shopName: booking.shop.name,
-            serviceName: booking.service.name,
+            serviceName: itemName,
           }),
         });
       } else if (status === "CANCELLED") {

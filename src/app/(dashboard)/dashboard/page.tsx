@@ -156,7 +156,19 @@ export default async function DashboardPage({
     // Recent bookings
     prisma.booking.findMany({
       where: { shopId: activeShopId },
-      include: { service: true, barber: true },
+      include: {
+        service: true,
+        package: {
+          include: {
+            services: {
+              include: {
+                service: true,
+              },
+            },
+          },
+        },
+        barber: true,
+      },
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
