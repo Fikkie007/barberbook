@@ -89,3 +89,59 @@ export interface BookingData {
   date: string;
   count: number;
 }
+
+// Analytics types
+export interface BarberPerformance {
+  barberId: string | null;
+  barberName: string;
+  bookingCount: number;
+  revenue: number;
+}
+
+export interface ServicePopularity {
+  id: string;
+  name: string;
+  type: 'service' | 'package';
+  bookingCount: number;
+  revenue: number;
+}
+
+export interface HourlyBookings {
+  hour: number;
+  count: number;
+}
+
+export interface DailyBookings {
+  dayOfWeek: number;
+  count: number;
+}
+
+export interface CustomerFrequency {
+  customerPhone: string;
+  customerName: string;
+  bookingCount: number;
+  totalSpent: number;
+  firstBooking: Date;
+  lastBooking: Date;
+  isNew: boolean;
+}
+
+export interface CustomerSegments {
+  newCustomers: number;
+  returningCustomers: number;
+  newRevenue: number;
+  returningRevenue: number;
+}
+
+export interface BookingTrends {
+  date: string;
+  bookings: number;
+  revenue: number;
+}
+
+export interface PackageVsSingle {
+  packageCount: number;
+  singleCount: number;
+  packageRevenue: number;
+  singleRevenue: number;
+}

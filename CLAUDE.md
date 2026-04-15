@@ -145,6 +145,7 @@ docker run -d -p 4000:3000 upstash/qstash-local
 - Prisma types re-exported for use throughout app
 - Extended types: `ShopWithDetails`, `BookingWithDetails`, `DashboardStats`
 - `DashboardStats` includes revenue breakdowns: `onlineRevenue`/`offlineRevenue` (by booking source), `serviceRevenue`/`tipRevenue` (by revenue type)
+- Analytics types: `BarberPerformance`, `ServicePopularity`, `HourlyBookings`, `DailyBookings`, `CustomerFrequency`, `CustomerSegments`, `BookingTrends`, `PackageVsSingle`
 
 ### Dashboard Features
 
@@ -154,6 +155,32 @@ docker run -d -p 4000:3000 upstash/qstash-local
 - Services page has tabs for managing individual services and service packages
 - Offline booking dialog (`src/components/dashboard/offline-booking-dialog.tsx`) allows owners to create walk-in bookings with `source: OFFLINE`
 - Packages management (`src/components/dashboard/packages-client.tsx`) allows creating bundles of multiple services with discounted pricing
+- Analytics page (`src/app/(dashboard)/dashboard/analytics/page.tsx`) provides comprehensive business insights
+
+### Analytics Dashboard
+
+The Analytics page provides detailed business analytics with four sections:
+
+**Barber Performance:**
+- Bar chart showing booking counts and revenue per barber
+- Top performers card highlighting best barbers
+
+**Service Analytics:**
+- Popular services/packages chart (top 10 by booking count)
+- Revenue distribution pie chart by service/package
+- Package vs single service comparison
+
+**Time Patterns:**
+- Hourly bookings chart showing busiest hours
+- Weekly pattern chart showing busiest days
+- Booking trends line chart over the year
+
+**Customer Insights:**
+- New vs returning customer segments
+- Customer frequency distribution
+- Top customers table by total spending
+
+Analytics components are in `src/components/dashboard/analytics/` and use types from `src/types/index.ts` (`BarberPerformance`, `ServicePopularity`, `HourlyBookings`, `DailyBookings`, `CustomerFrequency`, `CustomerSegments`, `BookingTrends`, `PackageVsSingle`).
 
 ### UI Components
 
@@ -161,6 +188,7 @@ docker run -d -p 4000:3000 upstash/qstash-local
 - Layout components in `src/components/layout/`
 - Feature components in `src/components/booking/` and `src/components/dashboard/`
 - Key dashboard components: `stats-card.tsx`, `booking-table.tsx`, `revenue-chart.tsx`, `offline-booking-dialog.tsx`, `packages-client.tsx`, `services-client.tsx`
+- Analytics components: `barber-performance-chart.tsx`, `top-barbers-card.tsx`, `service-popularity-chart.tsx`, `service-revenue-chart.tsx`, `package-vs-single-chart.tsx`, `hourly-bookings-chart.tsx`, `weekly-pattern-chart.tsx`, `booking-trends-chart.tsx`, `customer-segments-chart.tsx`, `customer-frequency-chart.tsx`, `top-customers-table.tsx`
 - Key UI components: `tabs.tsx` for tabbed navigation (services/packages tabs)
 - Form validation with react-hook-form + Zod
 
