@@ -10,6 +10,7 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 - 💬 **Notifikasi WhatsApp Otomatis** - Konfirmasi, reminder, dan notifikasi otomatis
 - 🏪 **Multi-tenant** - Setiap toko memiliki subdomain unik
 - 📊 **Dashboard Owner** - Kelola booking, layanan, paket, dan barber dengan breakdown revenue online vs offline
+- 📈 **Analytics** - Insight bisnis lengkap: performa barber, layanan populer, pola waktu, dan segmentasi pelanggan
 - 📱 **Mobile Friendly** - Responsif di semua perangkat
 
 ## Tech Stack
@@ -135,6 +136,29 @@ Keuntungan paket:
 - Customer mendapatkan beberapa layanan dalam satu booking
 - Durasi total paket dihitung otomatis
 - Booking history mencatat paket yang dipilih
+
+### Analytics Dashboard
+
+Halaman Analytics memberikan insight bisnis mendalam:
+
+**Performa Barber:**
+- Chart booking dan revenue per barber
+- Highlight barber dengan performa terbaik
+
+**Analisis Layanan:**
+- Top 10 layanan/paket populer
+- Distribusi pendapatan per layanan
+- Perbandingan paket vs layanan single
+
+**Pola Waktu Booking:**
+- Jam tersibuk (hourly distribution)
+- Hari tersibuk (weekly pattern)
+- Tren booking selama tahun berjalan
+
+**Insight Pelanggan:**
+- Segmentasi pelanggan baru vs returning
+- Distribusi frekuensi booking
+- Top pelanggan by total spending
 
 ## Demo Account
 
@@ -608,6 +632,11 @@ npx tsx scripts/test-qstash.ts  # Test QStash configuration
 src/
 ├── app/
 │   ├── (dashboard)/     # Protected routes
+│   │   └ dashboard/
+│   │       ├── analytics/   # Analytics page
+│   │       ├── bookings/    # Booking management
+│   │       ├── services/    # Services & packages
+│   │       └ barbers/     # Barber management
 │   ├── (public)/        # Landing page
 │   ├── api/             # API routes
 │   ├── auth/            # Auth pages
@@ -616,6 +645,7 @@ src/
 │   ├── ui/              # shadcn/ui components
 │   ├── layout/          # Layout components
 │   ├── dashboard/       # Dashboard components
+│   │   └ analytics/   # Analytics charts
 │   └── booking/         # Booking components
 ├── lib/
 │   ├── auth.ts          # NextAuth config

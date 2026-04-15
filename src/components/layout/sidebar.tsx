@@ -16,6 +16,7 @@ import {
   LogOut,
   Store,
   Plus,
+  BarChart3,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -35,6 +36,7 @@ interface SidebarProps {
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/bookings", label: "Booking", icon: CalendarDays },
   { href: "/dashboard/services", label: "Layanan", icon: Scissors },
   { href: "/dashboard/barbers", label: "Barber", icon: Users },
