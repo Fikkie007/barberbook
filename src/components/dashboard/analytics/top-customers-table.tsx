@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { id } from "date-fns/locale";
 import { CustomerFrequency } from "@/types";
 import {
@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ChartEmptyState } from "./chart-utils";
 
 interface TopCustomersTableProps {
   data: CustomerFrequency[];
@@ -18,11 +19,7 @@ interface TopCustomersTableProps {
 
 export default function TopCustomersTable({ data }: TopCustomersTableProps) {
   if (data.length === 0) {
-    return (
-      <div className="p-8 text-center text-slate-400">
-        Belum ada data pelanggan
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data pelanggan" height={64} />;
   }
 
   const topCustomers = data.slice(0, 10);
@@ -70,10 +67,10 @@ export default function TopCustomersTable({ data }: TopCustomersTableProps) {
               Rp {customer.totalSpent.toLocaleString("id-ID")}
             </TableCell>
             <TableCell className="text-slate-300">
-              {format(customer.firstBooking, "d MMM yyyy", { locale: id })}
+              {format(parseISO(customer.firstBooking), "d MMM yyyy", { locale: id })}
             </TableCell>
             <TableCell className="text-slate-300">
-              {format(customer.lastBooking, "d MMM yyyy", { locale: id })}
+              {format(parseISO(customer.lastBooking), "d MMM yyyy", { locale: id })}
             </TableCell>
           </TableRow>
         ))}

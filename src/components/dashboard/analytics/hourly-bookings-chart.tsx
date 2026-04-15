@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { HourlyBookings } from "@/types";
+import { chartTooltipStyle, chartLabelStyle, ChartEmptyState } from "./chart-utils";
 
 interface HourlyBookingsChartProps {
   data: HourlyBookings[];
@@ -17,11 +18,7 @@ interface HourlyBookingsChartProps {
 
 export default function HourlyBookingsChart({ data }: HourlyBookingsChartProps) {
   if (data.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-slate-400">
-        Belum ada data booking
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data booking" />;
   }
 
   // Fill in missing hours with 0
@@ -67,12 +64,8 @@ export default function HourlyBookingsChart({ data }: HourlyBookingsChartProps) 
             axisLine={false}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: "#1e293b",
-              border: "1px solid #334155",
-              borderRadius: "8px",
-            }}
-            labelStyle={{ color: "#fff" }}
+            contentStyle={chartTooltipStyle}
+            labelStyle={chartLabelStyle}
             formatter={(value) => [value, "Booking"]}
             labelFormatter={(label) => `Jam ${label}`}
           />

@@ -121,8 +121,8 @@ export interface CustomerFrequency {
   customerName: string;
   bookingCount: number;
   totalSpent: number;
-  firstBooking: Date;
-  lastBooking: Date;
+  firstBooking: string;  // ISO date string for client serialization
+  lastBooking: string;   // ISO date string for client serialization
   isNew: boolean;
 }
 

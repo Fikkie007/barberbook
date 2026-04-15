@@ -11,6 +11,7 @@ import {
   Legend,
 } from "recharts";
 import { BarberPerformance } from "@/types";
+import { chartTooltipStyle, chartLabelStyle, ChartEmptyState, formatCurrency, formatCurrencyShort } from "./chart-utils";
 
 interface BarberPerformanceChartProps {
   data: BarberPerformance[];
@@ -18,18 +19,10 @@ interface BarberPerformanceChartProps {
 
 export default function BarberPerformanceChart({ data }: BarberPerformanceChartProps) {
   if (data.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-slate-400">
-        Belum ada data barber
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data barber" />;
   }
 
   const sortedData = [...data].sort((a, b) => b.revenue - a.revenue);
-
-  const formatCurrency = (value: number) => {
-    return `Rp ${(value / 1000).toFixed(0)}K`;
-  };
 
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -56,20 +49,16 @@ export default function BarberPerformanceChart({ data }: BarberPerformanceChartP
           fontSize={12}
           tickLine={false}
           axisLine={false}
-          tickFormatter={formatCurrency}
+          tickFormatter={formatCurrencyShort}
         />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "#1e293b",
-            border: "1px solid #334155",
-            borderRadius: "8px",
-          }}
-          labelStyle={{ color: "#fff" }}
+          contentStyle={chartTooltipStyle}
+          labelStyle={chartLabelStyle}
           formatter={(value, name) => {
             const numValue = typeof value === "number" ? value : 0;
             const nameStr = String(name);
             if (nameStr === "revenue") {
-              return [`Rp ${numValue.toLocaleString("id-ID")}`, "Pendapatan"];
+              return [formatCurrency(numValue), "Pendapatan"];
             }
             return [numValue, "Booking"];
           }}

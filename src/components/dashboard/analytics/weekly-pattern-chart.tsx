@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { DailyBookings } from "@/types";
+import { chartTooltipStyle, chartLabelStyle, ChartEmptyState } from "./chart-utils";
 
 interface WeeklyPatternChartProps {
   data: DailyBookings[];
@@ -19,11 +20,7 @@ const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"
 
 export default function WeeklyPatternChart({ data }: WeeklyPatternChartProps) {
   if (data.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-slate-400">
-        Belum ada data booking
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data booking" />;
   }
 
   // Fill in all days
@@ -66,12 +63,8 @@ export default function WeeklyPatternChart({ data }: WeeklyPatternChartProps) {
             axisLine={false}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: "#1e293b",
-              border: "1px solid #334155",
-              borderRadius: "8px",
-            }}
-            labelStyle={{ color: "#fff" }}
+            contentStyle={chartTooltipStyle}
+            labelStyle={chartLabelStyle}
             formatter={(value) => [value, "Booking"]}
           />
           <Bar

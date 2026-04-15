@@ -28,7 +28,7 @@ import {
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ shop?: string }>;
+  searchParams: { shop?: string };
 }) {
   const session = await auth();
 
@@ -36,8 +36,7 @@ export default async function AnalyticsPage({
     redirect("/auth/login");
   }
 
-  const params = await searchParams;
-  const selectedShopId = params.shop;
+  const selectedShopId = searchParams.shop;
 
   // Get user's shops
   const shops = await prisma.shop.findMany({
@@ -287,8 +286,8 @@ export default async function AnalyticsPage({
     customerName: c.customerName,
     bookingCount: Number(c.booking_count),
     totalSpent: Number(c.total_spent),
-    firstBooking: c.first_booking,
-    lastBooking: c.last_booking,
+    firstBooking: c.first_booking.toISOString(),
+    lastBooking: c.last_booking.toISOString(),
     isNew: Number(c.booking_count) === 1,
   }));
 

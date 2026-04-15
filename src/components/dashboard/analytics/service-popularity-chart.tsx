@@ -11,6 +11,7 @@ import {
   Legend,
 } from "recharts";
 import { ServicePopularity } from "@/types";
+import { chartTooltipStyle, chartLabelStyle, ChartEmptyState, formatCurrency } from "./chart-utils";
 
 interface ServicePopularityChartProps {
   data: ServicePopularity[];
@@ -18,18 +19,10 @@ interface ServicePopularityChartProps {
 
 export default function ServicePopularityChart({ data }: ServicePopularityChartProps) {
   if (data.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-slate-400">
-        Belum ada data layanan
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data layanan" />;
   }
 
   const sortedData = [...data].sort((a, b) => b.bookingCount - a.bookingCount).slice(0, 10);
-
-  const formatCurrency = (value: number) => {
-    return `Rp ${(value / 1000).toFixed(0)}K`;
-  };
 
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -53,17 +46,13 @@ export default function ServicePopularityChart({ data }: ServicePopularityChartP
           axisLine={false}
         />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "#1e293b",
-            border: "1px solid #334155",
-            borderRadius: "8px",
-          }}
-          labelStyle={{ color: "#fff" }}
+          contentStyle={chartTooltipStyle}
+          labelStyle={chartLabelStyle}
           formatter={(value, name) => {
             const numValue = typeof value === "number" ? value : 0;
             const nameStr = String(name);
             if (nameStr === "revenue") {
-              return [`Rp ${numValue.toLocaleString("id-ID")}`, "Pendapatan"];
+              return [formatCurrency(numValue), "Pendapatan"];
             }
             return [numValue, "Booking"];
           }}

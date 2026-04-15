@@ -6,9 +6,9 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { PackageVsSingle } from "@/types";
+import { chartTooltipStyle, ChartEmptyState, formatCurrency, formatCurrencyShort } from "./chart-utils";
 
 interface PackageVsSingleChartProps {
   data: PackageVsSingle;
@@ -16,11 +16,7 @@ interface PackageVsSingleChartProps {
 
 export default function PackageVsSingleChart({ data }: PackageVsSingleChartProps) {
   if (data.packageCount === 0 && data.singleCount === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-slate-400">
-        Belum ada data booking
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data booking" />;
   }
 
   const bookingData = [
@@ -54,11 +50,7 @@ export default function PackageVsSingleChart({ data }: PackageVsSingleChartProps
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#1e293b",
-                border: "1px solid #334155",
-                borderRadius: "8px",
-              }}
+              contentStyle={chartTooltipStyle}
               formatter={(value) => [value, "Booking"]}
             />
           </PieChart>
@@ -77,19 +69,15 @@ export default function PackageVsSingleChart({ data }: PackageVsSingleChartProps
               outerRadius={70}
               paddingAngle={2}
               dataKey="value"
-              label={({ name, value }) => `${name}: Rp ${(Number(value) / 1000).toFixed(0)}K`}
+              label={({ name, value }) => `${name}: ${formatCurrencyShort(Number(value))}`}
             >
               {revenueData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{
-                backgroundColor: "#1e293b",
-                border: "1px solid #334155",
-                borderRadius: "8px",
-              }}
-              formatter={(value) => [`Rp ${Number(value).toLocaleString("id-ID")}`, "Pendapatan"]}
+              contentStyle={chartTooltipStyle}
+              formatter={(value) => [formatCurrency(Number(value)), "Pendapatan"]}
             />
           </PieChart>
         </ResponsiveContainer>

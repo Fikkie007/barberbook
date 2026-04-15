@@ -9,6 +9,7 @@ import {
   Legend,
 } from "recharts";
 import { ServicePopularity } from "@/types";
+import { chartTooltipStyle, ChartEmptyState, formatCurrency } from "./chart-utils";
 
 interface ServiceRevenueChartProps {
   data: ServicePopularity[];
@@ -21,11 +22,7 @@ const COLORS = [
 
 export default function ServiceRevenueChart({ data }: ServiceRevenueChartProps) {
   if (data.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-slate-400">
-        Belum ada data layanan
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data layanan" />;
   }
 
   const chartData = data
@@ -58,12 +55,8 @@ export default function ServiceRevenueChart({ data }: ServiceRevenueChartProps) 
           ))}
         </Pie>
         <Tooltip
-          contentStyle={{
-            backgroundColor: "#1e293b",
-            border: "1px solid #334155",
-            borderRadius: "8px",
-          }}
-          formatter={(value) => [`Rp ${Number(value).toLocaleString("id-ID")}`, "Pendapatan"]}
+          contentStyle={chartTooltipStyle}
+          formatter={(value) => [formatCurrency(Number(value)), "Pendapatan"]}
         />
         <Legend
           formatter={(value) => value}

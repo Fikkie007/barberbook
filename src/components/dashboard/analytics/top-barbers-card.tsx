@@ -1,6 +1,7 @@
 "use client";
 
 import { BarberPerformance } from "@/types";
+import { ChartEmptyState, formatCurrency } from "./chart-utils";
 
 interface TopBarbersCardProps {
   data: BarberPerformance[];
@@ -11,7 +12,7 @@ export default function TopBarbersCard({ data }: TopBarbersCardProps) {
     return (
       <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
         <h3 className="mb-4 text-lg font-semibold text-white">Top Barber</h3>
-        <p className="text-slate-400">Belum ada data barber</p>
+        <ChartEmptyState message="Belum ada data barber" height={48} />
       </div>
     );
   }
@@ -50,7 +51,7 @@ export default function TopBarbersCard({ data }: TopBarbersCardProps) {
                   <span className="text-sm text-white">{barber.barberName}</span>
                 </div>
                 <span className="text-sm font-medium text-amber-400">
-                  Rp {barber.revenue.toLocaleString("id-ID")}
+                  {formatCurrency(barber.revenue)}
                 </span>
               </div>
             ))}

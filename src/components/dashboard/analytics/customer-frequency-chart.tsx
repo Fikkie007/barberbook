@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { chartTooltipStyle, chartLabelStyle, ChartEmptyState } from "./chart-utils";
 
 interface CustomerFrequencyChartProps {
   data: Array<{ frequency: number; count: number }>;
@@ -16,11 +17,7 @@ interface CustomerFrequencyChartProps {
 
 export default function CustomerFrequencyChart({ data }: CustomerFrequencyChartProps) {
   if (data.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-slate-400">
-        Belum ada data pelanggan
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data pelanggan" />;
   }
 
   const chartData = data.map(item => ({
@@ -50,12 +47,8 @@ export default function CustomerFrequencyChart({ data }: CustomerFrequencyChartP
           axisLine={false}
         />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "#1e293b",
-            border: "1px solid #334155",
-            borderRadius: "8px",
-          }}
-          labelStyle={{ color: "#fff" }}
+          contentStyle={chartTooltipStyle}
+          labelStyle={chartLabelStyle}
           formatter={(value) => [value, "Pelanggan"]}
           labelFormatter={(label) => `Booking ${label}`}
         />

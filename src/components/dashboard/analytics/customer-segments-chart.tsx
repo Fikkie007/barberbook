@@ -9,6 +9,7 @@ import {
   Legend,
 } from "recharts";
 import { CustomerSegments } from "@/types";
+import { chartTooltipStyle, ChartEmptyState, formatCurrency, formatCurrencyShort } from "./chart-utils";
 
 interface CustomerSegmentsChartProps {
   data: CustomerSegments;
@@ -16,11 +17,7 @@ interface CustomerSegmentsChartProps {
 
 export default function CustomerSegmentsChart({ data }: CustomerSegmentsChartProps) {
   if (data.newCustomers === 0 && data.returningCustomers === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-slate-400">
-        Belum ada data pelanggan
-      </div>
-    );
+    return <ChartEmptyState message="Belum ada data pelanggan" />;
   }
 
   const customerData = [
@@ -66,11 +63,7 @@ export default function CustomerSegmentsChart({ data }: CustomerSegmentsChartPro
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1e293b",
-                  border: "1px solid #334155",
-                  borderRadius: "8px",
-                }}
+                contentStyle={chartTooltipStyle}
                 formatter={(value) => [value, "Pelanggan"]}
               />
               <Legend />
@@ -90,19 +83,15 @@ export default function CustomerSegmentsChart({ data }: CustomerSegmentsChartPro
                 outerRadius={70}
                 paddingAngle={2}
                 dataKey="value"
-                label={({ value }) => `Rp ${(Number(value) / 1000).toFixed(0)}K`}
+                label={({ value }) => formatCurrencyShort(Number(value))}
               >
                 {revenueData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1e293b",
-                  border: "1px solid #334155",
-                  borderRadius: "8px",
-                }}
-                formatter={(value) => [`Rp ${Number(value).toLocaleString("id-ID")}`, "Pendapatan"]}
+                contentStyle={chartTooltipStyle}
+                formatter={(value) => [formatCurrency(Number(value)), "Pendapatan"]}
               />
               <Legend />
             </PieChart>
