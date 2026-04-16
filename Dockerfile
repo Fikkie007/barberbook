@@ -18,12 +18,15 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+
+# Set dummy DATABASE_URL for Prisma generate (actual URL provided at runtime)
+ENV DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy?connect_timeout=1"
+
+# Generate Prisma client
+RUN npx prisma generate
 
 # Build the application
 RUN npm run build
@@ -40,7 +43,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Install Prisma CLI globally for running migrations (pinned to match package.json version)
-RUN npm install -g prisma@6.19.2 tsx
+RUN npm install -g prisma@7.7.0 tsx
 
 # Copy necessary files
 COPY --from=builder /app/public ./public
