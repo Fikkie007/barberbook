@@ -8,16 +8,16 @@ BarberBook is a multi-tenant SaaS platform for barbershop online booking. Each s
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router)
-- **Database:** PostgreSQL with Prisma ORM (generated client in `src/generated/prisma/`)
-- **Auth:** NextAuth.js v5 (beta) with JWT sessions
+- **Framework:** Next.js 16.2 (App Router)
+- **Database:** PostgreSQL with Prisma ORM v7 (using `@prisma/adapter-pg` connection pool adapter)
+- **Auth:** NextAuth.js v5 (beta.31) with JWT sessions
 - **UI:** shadcn/ui + Tailwind CSS v4
 - **Forms:** react-hook-form + Zod v4
 - **Charts:** Recharts for dashboard revenue visualization
 - **WhatsApp:** Fonnte API
 - **Scheduled Jobs:** Upstash QStash (for reminder scheduling)
 
-**TypeScript:** Strict mode enabled. Import paths use `@/*` alias (e.g., `@/lib/auth`). Prisma types imported from `@prisma/client` (generated types in `src/generated/prisma/`).
+**TypeScript:** Strict mode enabled (TypeScript v6). Import paths use `@/*` alias (e.g., `@/lib/auth`). Prisma types imported from `@prisma/client` (generated types in `src/generated/prisma/`).
 
 ## Commands
 
@@ -83,8 +83,8 @@ For local subdomain testing:
 
 ### Database
 
-- PostgreSQL via Prisma ORM
-- Prisma client singleton in `src/lib/prisma.ts` (prevents multiple instances in dev)
+- PostgreSQL via Prisma ORM v7 with connection pool adapter (`@prisma/adapter-pg` + `pg` package)
+- Prisma client singleton in `src/lib/prisma.ts` (prevents multiple instances in dev, uses Pool adapter)
 - Generated Prisma types in `src/generated/prisma/`
 - Schema includes: User, Shop, Service, ServicePackage, PackageService, Barber, Booking, WorkingDay
 - Booking model has reminder tracking fields: `whatsappSent`, `confirmationSent`, `reminderSent`, `qstashMessageId`

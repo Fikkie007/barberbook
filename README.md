@@ -15,9 +15,9 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router)
-- **Database:** PostgreSQL dengan Prisma ORM
-- **Auth:** NextAuth.js v5
+- **Framework:** Next.js 16.2 (App Router)
+- **Database:** PostgreSQL dengan Prisma ORM v7 (connection pool adapter)
+- **Auth:** NextAuth.js v5 (beta.31)
 - **UI:** shadcn/ui + Tailwind CSS
 - **WhatsApp API:** Fonnte
 - **Scheduled Jobs:** Upstash QStash
