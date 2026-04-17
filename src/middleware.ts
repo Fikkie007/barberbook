@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 
 /**
  * Get the actual protocol from the request (handles reverse proxy)
@@ -23,7 +23,7 @@ function getSecureUrl(request: NextRequest, path: string): URL {
 }
 
 // Subdomain routing for multi-tenant
-export const middleware = auth((request) => {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
@@ -71,7 +71,11 @@ export const middleware = auth((request) => {
 
   // Protected dashboard routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/settings")) {
-    if (!request.auth) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+    if (!token) {
       const loginUrl = getSecureUrl(request, "/auth/login");
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
@@ -79,12 +83,18 @@ export const middleware = auth((request) => {
   }
 
   // Redirect logged-in users away from auth pages
-  if (isPublicPath && request.auth && !pathname.startsWith("/api")) {
-    return NextResponse.redirect(getSecureUrl(request, "/dashboard"));
+  if (isPublicPath && !pathname.startsWith("/api")) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+    if (token) {
+      return NextResponse.redirect(getSecureUrl(request, "/dashboard"));
+    }
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
