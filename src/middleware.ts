@@ -71,9 +71,13 @@ export async function middleware(request: NextRequest) {
 
   // Protected dashboard routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/settings")) {
+    const protocol = getProtocol(request);
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
+      cookieName: protocol === "https"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
     });
     if (!token) {
       const loginUrl = getSecureUrl(request, "/auth/login");
@@ -84,9 +88,13 @@ export async function middleware(request: NextRequest) {
 
   // Redirect logged-in users away from auth pages
   if (isPublicPath && !pathname.startsWith("/api")) {
+    const protocol = getProtocol(request);
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
+      cookieName: protocol === "https"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
     });
     if (token) {
       return NextResponse.redirect(getSecureUrl(request, "/dashboard"));
