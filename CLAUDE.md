@@ -54,6 +54,7 @@ docker compose -f docker-compose.prod.yml up -d  # Production deployment
 - `(dashboard)/` - Protected routes requiring authentication (session checked in layout)
 - `(public)/` - Landing page and public routes
 - `booking/[slug]/` - Public booking pages accessed via subdomain rewrite
+- `queue/[slug]/` - Live queue display page for barbershops (TV display mode)
 
 ### Multi-tenant Routing
 
@@ -111,6 +112,7 @@ All API routes are in `src/app/api/`:
 - `auth/[...nextauth]/` - NextAuth handlers
 - `auth/register/` - User registration
 - `bookings/` - CRUD for bookings (public create, owner manage; supports `source: ONLINE|OFFLINE` parameter; supports single service or package bookings)
+- `bookings/queue/` - Get queue data for live display (returns bookings with queue positions and stats)
 - `bookings/send-reminder/` - QStash webhook for scheduled reminders
 - `cron/` - Cron endpoint for processing pending notifications (call hourly)
 - `services/` - Shop services management
@@ -182,13 +184,29 @@ The Analytics page provides detailed business analytics with four sections:
 
 Analytics components are in `src/components/dashboard/analytics/` and use types from `src/types/index.ts` (`BarberPerformance`, `ServicePopularity`, `HourlyBookings`, `DailyBookings`, `CustomerFrequency`, `CustomerSegments`, `BookingTrends`, `PackageVsSingle`).
 
+### Queue Display (TV Mode)
+
+The queue display page (`/queue/[slug]`) provides a live, TV-friendly view for barbershops to display in their waiting area:
+
+- **Real-time updates:** Polls API every 5 seconds for live queue status
+- **Active bookings:** Shows only PENDING and CONFIRMED bookings with queue positions
+- **Large display:** Designed for TV screens with large text and dark theme
+- **Status badges:** Indonesian status labels (MENUNGGU, DIPROSES, SELESAI, DIBATALKAN)
+- **Stats footer:** Shows total, pending, in-progress, and completed counts
+- **LIVE indicator:** Shows connection status (green for live, red for offline)
+
+Access via: `yourdomain.com/queue/demo-barbershop` or directly by slug path.
+
+Queue component is in `src/components/queue/queue-display.tsx` and uses the `/api/bookings/queue` API endpoint.
+
 ### UI Components
 
 - Uses shadcn/ui components in `src/components/ui/`
 - Layout components in `src/components/layout/`
-- Feature components in `src/components/booking/` and `src/components/dashboard/`
+- Feature components in `src/components/booking/`, `src/components/dashboard/`, and `src/components/queue/`
 - Key dashboard components: `stats-card.tsx`, `booking-table.tsx`, `revenue-chart.tsx`, `offline-booking-dialog.tsx`, `packages-client.tsx`, `services-client.tsx`
 - Analytics components: `barber-performance-chart.tsx`, `top-barbers-card.tsx`, `service-popularity-chart.tsx`, `service-revenue-chart.tsx`, `package-vs-single-chart.tsx`, `hourly-bookings-chart.tsx`, `weekly-pattern-chart.tsx`, `booking-trends-chart.tsx`, `customer-segments-chart.tsx`, `customer-frequency-chart.tsx`, `top-customers-table.tsx`
+- Queue components: `queue-display.tsx` for live TV queue display
 - Key UI components: `tabs.tsx` for tabbed navigation (services/packages tabs)
 - Form validation with react-hook-form + Zod
 

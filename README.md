@@ -7,6 +7,7 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 - 📅 **Booking Online 24/7** - Pelanggan bisa booking kapan saja
 - 🏃 **Offline Booking** - Catat booking walk-in/customer langsung datang
 - 📦 **Paket Layanan** - Buat bundle paket dari beberapa layanan dengan harga spesial
+- 📺 **Live Queue Display** - Display antrian real-time untuk TV di area waiting (mode TV)
 - 💬 **Notifikasi WhatsApp Otomatis** - Konfirmasi, reminder, dan notifikasi otomatis
 - 🏪 **Multi-tenant** - Setiap toko memiliki subdomain unik
 - 📊 **Dashboard Owner** - Kelola booking, layanan, paket, dan barber dengan breakdown revenue online vs offline
@@ -159,6 +160,24 @@ Halaman Analytics memberikan insight bisnis mendalam:
 - Segmentasi pelanggan baru vs returning
 - Distribusi frekuensi booking
 - Top pelanggan by total spending
+
+### Queue Display (TV Mode)
+
+Fitur display antrian live untuk ditampilkan di TV di area waiting barbershop:
+
+- **Real-time updates** - Polling setiap 5 detik
+- **Antrian aktif** - Hanya tampilkan booking yang menunggu dan sedang diproses
+- **Design TV-friendly** - Text besar, dark theme, cocok untuk TV
+- **Status badge** - Label Indonesia: MENUNGGU, DIPROSES, SELESAI, DIBATALKAN
+- **Stats footer** - Total, menunggu, diproses, selesai
+- **LIVE indicator** - Status koneksi (hijau = live, merah = offline)
+
+Akses via: `yourdomain.com/queue/demo-barbershop`
+
+Cocok untuk:
+- Display TV di area waiting
+- Customer bisa lihat posisi antrian
+- Barber bisa monitor antrian dari jarak jauh
 
 ## Demo Account
 
@@ -640,13 +659,15 @@ src/
 │   ├── (public)/        # Landing page
 │   ├── api/             # API routes
 │   ├── auth/            # Auth pages
-│   └── booking/         # Public booking pages
+│   ├── booking/         # Public booking pages
+│   └── queue/           # Live queue display (TV mode)
 ├── components/
 │   ├── ui/              # shadcn/ui components
 │   ├── layout/          # Layout components
 │   ├── dashboard/       # Dashboard components
 │   │   └ analytics/   # Analytics charts
-│   └── booking/         # Booking components
+│   ├── booking/         # Booking components
+│   └── queue/           # Queue display components
 ├── lib/
 │   ├── auth.ts          # NextAuth config
 │   ├── prisma.ts        # Prisma client
