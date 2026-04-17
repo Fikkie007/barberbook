@@ -6,7 +6,7 @@ import { id } from "date-fns/locale";
 
 interface QueueItem {
   id: string;
-  queuePosition: number | null;
+  queuePosition: number;
   customerName: string;
   bookingTime: string;
   serviceName: string;

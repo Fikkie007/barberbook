@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { BookingStatus } from "@prisma/client";
 import { format } from "date-fns";
 
 export async function GET(request: NextRequest) {
@@ -18,10 +19,13 @@ export async function GET(request: NextRequest) {
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
-    const bookings = await prisma.booking.findMany({
+    // Fetch active bookings for queue display (PENDING and CONFIRMED are active)
+    const activeStatuses: BookingStatus[] = [BookingStatus.PENDING, BookingStatus.CONFIRMED];
+    const activeBookings = await prisma.booking.findMany({
       where: {
         shopId,
         bookingDate: { gte: targetDate, lte: endDate },
+        status: { in: activeStatuses },
       },
       include: {
         service: true,
@@ -39,11 +43,16 @@ export async function GET(request: NextRequest) {
       orderBy: [{ bookingTime: "asc" }],
     });
 
-    // Calculate queue position (only for non-completed/cancelled bookings)
-    const activeStatuses = ["PENDING", "CONFIRMED"];
-    const activeBookings = bookings.filter((b) => activeStatuses.includes(b.status));
+    // Fetch all bookings for stats (separate query, minimal data)
+    const allBookings = await prisma.booking.findMany({
+      where: {
+        shopId,
+        bookingDate: { gte: targetDate, lte: endDate },
+      },
+      select: { status: true },
+    });
 
-    const queue = bookings.map((booking, index) => {
+    const queue = activeBookings.map((booking, index) => {
       // Get service/package name
       let serviceName: string;
       if (booking.package) {
@@ -54,14 +63,9 @@ export async function GET(request: NextRequest) {
         serviceName = "Layanan";
       }
 
-      // Calculate queue position only for active bookings
-      const queuePosition = activeStatuses.includes(booking.status)
-        ? activeBookings.findIndex((b) => b.id === booking.id) + 1
-        : null;
-
       return {
         id: booking.id,
-        queuePosition,
+        queuePosition: index + 1,
         customerName: booking.customerName,
         bookingTime: booking.bookingTime,
         serviceName,
@@ -71,13 +75,13 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Calculate stats
+    // Calculate stats from all bookings
     const stats = {
-      total: bookings.length,
-      pending: bookings.filter((b) => b.status === "PENDING").length,
-      confirmed: bookings.filter((b) => b.status === "CONFIRMED").length,
-      completed: bookings.filter((b) => b.status === "COMPLETED").length,
-      cancelled: bookings.filter((b) => b.status === "CANCELLED").length,
+      total: allBookings.length,
+      pending: allBookings.filter((b) => b.status === BookingStatus.PENDING).length,
+      confirmed: allBookings.filter((b) => b.status === BookingStatus.CONFIRMED).length,
+      completed: allBookings.filter((b) => b.status === BookingStatus.COMPLETED).length,
+      cancelled: allBookings.filter((b) => b.status === BookingStatus.CANCELLED).length,
     };
 
     return NextResponse.json({
