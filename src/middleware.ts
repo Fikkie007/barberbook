@@ -69,14 +69,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // Get session token (edge-compatible)
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
   // Protected dashboard routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/settings")) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
     if (!token) {
       const loginUrl = getSecureUrl(request, "/auth/login");
       loginUrl.searchParams.set("callbackUrl", pathname);
@@ -85,8 +83,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect logged-in users away from auth pages
-  if (isPublicPath && token && !pathname.startsWith("/api")) {
-    return NextResponse.redirect(getSecureUrl(request, "/dashboard"));
+  if (isPublicPath && !pathname.startsWith("/api")) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+    if (token) {
+      return NextResponse.redirect(getSecureUrl(request, "/dashboard"));
+    }
   }
 
   return NextResponse.next();
