@@ -1,12 +1,21 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { format, startOfDay, startOfWeek, startOfMonth, endOfDay, endOfWeek, endOfMonth } from "date-fns";
+import {
+  format,
+  startOfDay,
+  startOfWeek,
+  startOfMonth,
+  endOfDay,
+  endOfWeek,
+  endOfMonth,
+} from "date-fns";
 import { id } from "date-fns/locale";
 import StatsCard from "@/components/dashboard/stats-card";
 import BookingTable from "@/components/dashboard/booking-table";
 import RevenueChart from "@/components/dashboard/revenue-chart";
 import CopyButton from "@/components/dashboard/copy-button";
+import { getUserShops, getActiveShopId } from "@/lib/shop-helpers";
 
 export default async function DashboardPage({
   searchParams,
@@ -22,14 +31,46 @@ export default async function DashboardPage({
   const params = await searchParams;
   const selectedShopId = params.shop;
 
-  // Get user's shops
-  const shops = await prisma.shop.findMany({
-    where: { ownerId: session.user.id },
-    select: { id: true, name: true, slug: true },
-  });
+  // Get user's shops based on role
+  const shops = await getUserShops(session.user.id, session.user.role);
 
-  // If no shops, show setup prompt
-  if (shops.length === 0) {
+  // Get active shop ID
+  const activeShopId = await getActiveShopId(
+    session.user.id,
+    session.user.role,
+    selectedShopId,
+  );
+
+  // If no active shop, show appropriate prompt
+  if (!activeShopId) {
+    // OWNER has shops but none selected
+    if (session.user.role === "OWNER" && shops.length > 0) {
+      return (
+        <div className="flex h-[calc(100vh-8rem)] flex-col items-center justify-center text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10">
+            <svg
+              className="h-10 w-10 text-amber-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white">Pilih Toko</h2>
+          <p className="mt-2 text-slate-400">
+            Silakan pilih toko dari sidebar untuk melihat dashboard.
+          </p>
+        </div>
+      );
+    }
+
+    // No shops available (new OWNER or CASHIER without assignment)
     return (
       <div className="flex h-[calc(100vh-8rem)] flex-col items-center justify-center text-center">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10">
@@ -47,22 +88,29 @@ export default async function DashboardPage({
             />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-white">Selamat Datang di BarberBook!</h2>
+        <h2 className="text-2xl font-bold text-white">
+          {session.user.role === "CASHIER"
+            ? "Anda Belum Ditugaskan"
+            : "Selamat Datang di BarberBook!"}
+        </h2>
         <p className="mt-2 text-slate-400">
-          Anda belum memiliki toko. Buat toko pertama Anda untuk memulai.
+          {session.user.role === "CASHIER"
+            ? "Hubungi admin untuk ditugaskan ke toko."
+            : "Anda belum memiliki toko. Buat toko pertama Anda untuk memulai."}
         </p>
-        <a
-          href="/dashboard/settings?new=true"
-          className="mt-6 rounded-lg bg-amber-500 px-6 py-3 font-semibold text-slate-900 hover:bg-amber-400"
-        >
-          Buat Toko Sekarang
-        </a>
+        {session.user.role !== "CASHIER" && (
+          <a
+            href="/dashboard/settings?new=true"
+            className="mt-6 rounded-lg bg-amber-500 px-6 py-3 font-semibold text-slate-900 hover:bg-amber-400"
+          >
+            Buat Toko Sekarang
+          </a>
+        )}
       </div>
     );
   }
 
-  // Use first shop if none selected
-  const activeShopId = selectedShopId || shops[0].id;
+  // activeShopId is already set from getActiveShopId
   const activeShop = shops.find((s) => s.id === activeShopId) || shops[0];
 
   const now = new Date();
@@ -186,7 +234,9 @@ export default async function DashboardPage({
       ORDER BY month ASC
     `,
     // Monthly revenue by source for chart
-    prisma.$queryRaw<Array<{ month: Date; source: string; revenue: bigint; count: bigint }>>`
+    prisma.$queryRaw<
+      Array<{ month: Date; source: string; revenue: bigint; count: bigint }>
+    >`
       SELECT
         DATE_TRUNC('month', "bookingDate") as month,
         source,
@@ -217,11 +267,18 @@ export default async function DashboardPage({
   };
 
   // Format chart data with source breakdown
-  const monthMap = new Map<string, { online: number; offline: number; bookings: number }>();
+  const monthMap = new Map<
+    string,
+    { online: number; offline: number; bookings: number }
+  >();
 
   monthlyRevenueBySource.forEach((item) => {
     const monthKey = format(item.month, "MMM", { locale: id });
-    const existing = monthMap.get(monthKey) || { online: 0, offline: 0, bookings: 0 };
+    const existing = monthMap.get(monthKey) || {
+      online: 0,
+      offline: 0,
+      bookings: 0,
+    };
     if (item.source === "ONLINE") {
       existing.online = Number(item.revenue);
     } else {
@@ -291,23 +348,33 @@ export default async function DashboardPage({
         </div>
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <p className="text-sm text-slate-400">Booking Minggu Ini</p>
-          <p className="text-2xl font-bold text-white">{stats.thisWeekBookings}</p>
+          <p className="text-2xl font-bold text-white">
+            {stats.thisWeekBookings}
+          </p>
         </div>
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <p className="text-sm text-slate-400">Booking Bulan Ini</p>
-          <p className="text-2xl font-bold text-white">{stats.thisMonthBookings}</p>
+          <p className="text-2xl font-bold text-white">
+            {stats.thisMonthBookings}
+          </p>
         </div>
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <p className="text-sm text-slate-400">Pendapatan Layanan</p>
-          <p className="text-2xl font-bold text-blue-400">Rp {stats.serviceRevenue.toLocaleString("id-ID")}</p>
+          <p className="text-2xl font-bold text-blue-400">
+            Rp {stats.serviceRevenue.toLocaleString("id-ID")}
+          </p>
         </div>
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <p className="text-sm text-slate-400">Pendapatan Tip</p>
-          <p className="text-2xl font-bold text-purple-400">Rp {stats.tipRevenue.toLocaleString("id-ID")}</p>
+          <p className="text-2xl font-bold text-purple-400">
+            Rp {stats.tipRevenue.toLocaleString("id-ID")}
+          </p>
         </div>
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <p className="text-sm text-slate-400">Pendapatan Online</p>
-          <p className="text-2xl font-bold text-cyan-400">Rp {stats.onlineRevenue.toLocaleString("id-ID")}</p>
+          <p className="text-2xl font-bold text-cyan-400">
+            Rp {stats.onlineRevenue.toLocaleString("id-ID")}
+          </p>
         </div>
       </div>
 
@@ -323,15 +390,27 @@ export default async function DashboardPage({
 
         {/* Booking Link */}
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-          <h2 className="mb-4 text-lg font-semibold text-white">Link Booking</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white">
+            Link Booking
+          </h2>
           <p className="mb-4 text-sm text-slate-400">
             Bagikan link ini ke pelanggan Anda untuk menerima booking online:
           </p>
           <div className="flex items-center gap-2 rounded-lg bg-slate-700/50 p-3">
             <span className="flex-1 truncate text-sm text-slate-300">
-              {process.env.NEXT_PUBLIC_APP_URL?.replace("://", `://${activeShop.slug}.`) || `https://${activeShop.slug}.barberbook.com`}
+              {process.env.NEXT_PUBLIC_APP_URL?.replace(
+                "://",
+                `://${activeShop.slug}.`,
+              ) || `https://${activeShop.slug}.barberbook.com`}
             </span>
-            <CopyButton text={process.env.NEXT_PUBLIC_APP_URL?.replace("://", `://${activeShop.slug}.`) || `https://${activeShop.slug}.barberbook.com`} />
+            <CopyButton
+              text={
+                process.env.NEXT_PUBLIC_APP_URL?.replace(
+                  "://",
+                  `://${activeShop.slug}.`,
+                ) || `https://${activeShop.slug}.barberbook.com`
+              }
+            />
           </div>
         </div>
       </div>

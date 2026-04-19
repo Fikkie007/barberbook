@@ -24,11 +24,12 @@ import {
   BookingTrends,
   PackageVsSingle,
 } from "@/types";
+import { getUserShops, getActiveShopId } from "@/lib/shop-helpers";
 
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: { shop?: string };
+  searchParams: Promise<{ shop?: string }>;
 }) {
   const session = await auth();
 
@@ -36,20 +37,34 @@ export default async function AnalyticsPage({
     redirect("/auth/login");
   }
 
-  const selectedShopId = searchParams.shop;
+  const params = await searchParams;
+  const selectedShopId = params.shop;
 
-  // Get user's shops
-  const shops = await prisma.shop.findMany({
-    where: { ownerId: session.user.id },
-    select: { id: true, name: true, slug: true },
-  });
+  // Get user's shops based on role
+  const shops = await getUserShops(session.user.id, session.user.role);
 
-  // If no shops, redirect to settings
-  if (shops.length === 0) {
-    redirect("/dashboard/settings?new=true");
+  // Get active shop ID
+  const activeShopId = await getActiveShopId(
+    session.user.id,
+    session.user.role,
+    selectedShopId,
+  );
+
+  // OWNER must select a shop first
+  if (!activeShopId) {
+    if (session.user.role === "OWNER" && shops.length > 0) {
+      return (
+        <div className="flex h-[calc(100vh-8rem)] flex-col items-center justify-center text-center">
+          <h2 className="text-2xl font-bold text-white">Pilih Toko</h2>
+          <p className="mt-2 text-slate-400">
+            Silakan pilih toko dari sidebar untuk melihat analytics.
+          </p>
+        </div>
+      );
+    }
+    redirect("/dashboard");
   }
 
-  const activeShopId = selectedShopId || shops[0].id;
   const activeShop = shops.find((s) => s.id === activeShopId) || shops[0];
 
   const now = new Date();
@@ -128,7 +143,10 @@ export default async function AnalyticsPage({
     _sum: { totalPrice: true },
   });
 
-  if (bookingsWithoutBarber > 0 && !barberPerformance.find((b) => b.barberId === null)) {
+  if (
+    bookingsWithoutBarber > 0 &&
+    !barberPerformance.find((b) => b.barberId === null)
+  ) {
     barberPerformance.push({
       barberId: null,
       barberName: "Tanpa Barber",
@@ -189,12 +207,20 @@ export default async function AnalyticsPage({
   const packageVsSingle: PackageVsSingle = {
     packageCount: packageStats.reduce((sum, s) => sum + s._count.id, 0),
     singleCount: serviceStats.reduce((sum, s) => sum + s._count.id, 0),
-    packageRevenue: packageStats.reduce((sum, s) => sum + (s._sum.totalPrice || 0), 0),
-    singleRevenue: serviceStats.reduce((sum, s) => sum + (s._sum.totalPrice || 0), 0),
+    packageRevenue: packageStats.reduce(
+      (sum, s) => sum + (s._sum.totalPrice || 0),
+      0,
+    ),
+    singleRevenue: serviceStats.reduce(
+      (sum, s) => sum + (s._sum.totalPrice || 0),
+      0,
+    ),
   };
 
   // Hourly Bookings
-  const hourlyData = await prisma.$queryRaw<Array<{ hour: number; count: bigint }>>`
+  const hourlyData = await prisma.$queryRaw<
+    Array<{ hour: number; count: bigint }>
+  >`
     SELECT
       EXTRACT(HOUR FROM CAST("bookingTime" AS TIME))::int as hour,
       COUNT(*) as count
@@ -213,7 +239,9 @@ export default async function AnalyticsPage({
   }));
 
   // Daily (Weekly) Bookings
-  const dailyData = await prisma.$queryRaw<Array<{ day_of_week: number; count: bigint }>>`
+  const dailyData = await prisma.$queryRaw<
+    Array<{ day_of_week: number; count: bigint }>
+  >`
     SELECT
       EXTRACT(DOW FROM "bookingDate")::int as day_of_week,
       COUNT(*) as count
@@ -299,15 +327,21 @@ export default async function AnalyticsPage({
     newCustomers: newCustomers.length,
     returningCustomers: returningCustomers.length,
     newRevenue: newCustomers.reduce((sum, c) => sum + c.totalSpent, 0),
-    returningRevenue: returningCustomers.reduce((sum, c) => sum + c.totalSpent, 0),
+    returningRevenue: returningCustomers.reduce(
+      (sum, c) => sum + c.totalSpent,
+      0,
+    ),
   };
 
   // Frequency distribution
-  const frequencyDistribution = customerFrequency.reduce<Map<number, number>>((map, c) => {
-    const freq = c.bookingCount;
-    map.set(freq, (map.get(freq) || 0) + 1);
-    return map;
-  }, new Map());
+  const frequencyDistribution = customerFrequency.reduce<Map<number, number>>(
+    (map, c) => {
+      const freq = c.bookingCount;
+      map.set(freq, (map.get(freq) || 0) + 1);
+      return map;
+    },
+    new Map(),
+  );
 
   const frequencyChartData = Array.from(frequencyDistribution.entries())
     .map(([frequency, count]) => ({ frequency, count }))
@@ -331,35 +365,47 @@ export default async function AnalyticsPage({
 
       {/* Barber Performance Section */}
       <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-        <h2 className="mb-4 text-lg font-semibold text-white">Performa Barber</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Performa Barber
+        </h2>
         <div className="grid gap-6 lg:grid-cols-2">
           <BarberPerformanceChart data={barberPerformance} />
-          <TopBarbersCard data={barberPerformance.filter(b => b.barberId !== null)} />
+          <TopBarbersCard
+            data={barberPerformance.filter((b) => b.barberId !== null)}
+          />
         </div>
       </div>
 
       {/* Service Analytics Section */}
       <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-        <h2 className="mb-4 text-lg font-semibold text-white">Analisis Layanan</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Analisis Layanan
+        </h2>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <h3 className="mb-2 text-sm text-slate-400">Layanan Populer</h3>
             <ServicePopularityChart data={servicePopularity} />
           </div>
           <div>
-            <h3 className="mb-2 text-sm text-slate-400">Distribusi Pendapatan</h3>
+            <h3 className="mb-2 text-sm text-slate-400">
+              Distribusi Pendapatan
+            </h3>
             <ServiceRevenueChart data={servicePopularity} />
           </div>
         </div>
         <div className="mt-6">
-          <h3 className="mb-2 text-sm text-slate-400">Paket vs Layanan Single</h3>
+          <h3 className="mb-2 text-sm text-slate-400">
+            Paket vs Layanan Single
+          </h3>
           <PackageVsSingleChart data={packageVsSingle} />
         </div>
       </div>
 
       {/* Time Analytics Section */}
       <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-        <h2 className="mb-4 text-lg font-semibold text-white">Pola Waktu Booking</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Pola Waktu Booking
+        </h2>
         <div className="grid gap-6 lg:grid-cols-2">
           <div>
             <h3 className="mb-2 text-sm text-slate-400">Jam Tersibuk</h3>
@@ -378,14 +424,20 @@ export default async function AnalyticsPage({
 
       {/* Customer Insights Section */}
       <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
-        <h2 className="mb-4 text-lg font-semibold text-white">Insight Pelanggan</h2>
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Insight Pelanggan
+        </h2>
         <div className="grid gap-6 lg:grid-cols-2">
           <div>
-            <h3 className="mb-2 text-sm text-slate-400">Pelanggan Baru vs Repeat</h3>
+            <h3 className="mb-2 text-sm text-slate-400">
+              Pelanggan Baru vs Repeat
+            </h3>
             <CustomerSegmentsChart data={customerSegments} />
           </div>
           <div>
-            <h3 className="mb-2 text-sm text-slate-400">Frekuensi Booking Pelanggan</h3>
+            <h3 className="mb-2 text-sm text-slate-400">
+              Frekuensi Booking Pelanggan
+            </h3>
             <CustomerFrequencyChart data={frequencyChartData} />
           </div>
         </div>

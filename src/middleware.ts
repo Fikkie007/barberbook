@@ -93,6 +93,31 @@ export async function middleware(request: NextRequest) {
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
+
+    const role = token.role as string;
+
+    // CASHIER restricted routes
+    const cashierRestrictedRoutes = [
+      "/dashboard/analytics",
+      "/dashboard/barbers",
+      "/dashboard/users",
+      "/dashboard/settings",
+    ];
+    if (role === "CASHIER") {
+      const isRestricted = cashierRestrictedRoutes.some((route) =>
+        pathname.startsWith(route)
+      );
+      if (isRestricted) {
+        return NextResponse.redirect(getSecureUrl(request, "/dashboard"));
+      }
+    }
+
+    // Role-based access: /dashboard/users requires ADMIN or OWNER
+    if (pathname.startsWith("/dashboard/users")) {
+      if (role !== "ADMIN" && role !== "OWNER") {
+        return NextResponse.redirect(getSecureUrl(request, "/dashboard"));
+      }
+    }
   }
 
   // Redirect logged-in users away from auth pages

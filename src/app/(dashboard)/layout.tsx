@@ -14,16 +14,46 @@ export default async function DashboardLayout({
     redirect("/auth/login");
   }
 
-  // Get user's shops
-  const shops = await prisma.shop.findMany({
-    where: { ownerId: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      logo: true,
-    },
-  });
+  // Get shops based on role
+  let shops: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    logo: string | null;
+  }> = [];
+
+  if (session.user.role === "CASHIER") {
+    // CASHIER sees their assigned shop only
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        shopId: true,
+        assignedShop: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+          },
+        },
+      },
+    });
+
+    if (user?.assignedShop) {
+      shops = [user.assignedShop];
+    }
+  } else {
+    // ADMIN and OWNER see shops they own
+    shops = await prisma.shop.findMany({
+      where: { ownerId: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logo: true,
+      },
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">

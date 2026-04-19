@@ -12,12 +12,14 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       role: Role;
+      shopId?: string | null;
     };
   }
 
   interface User {
     id: string;
     role: Role;
+    shopId?: string | null;
   }
 }
 
@@ -25,6 +27,7 @@ declare module "next-auth" {
 interface CustomJWT {
   id?: string;
   role?: Role;
+  shopId?: string | null;
   name?: string | null;
   email?: string | null;
   picture?: string | null;
@@ -69,6 +72,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
+          shopId: user.shopId,
         };
       },
     }),
@@ -79,6 +83,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const t = token as CustomJWT;
         t.id = user.id;
         t.role = user.role;
+        t.shopId = user.shopId;
       }
       return token;
     },
@@ -87,6 +92,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const t = token as CustomJWT;
         session.user.id = t.id!;
         session.user.role = t.role!;
+        session.user.shopId = t.shopId!;
       }
       return session;
     },

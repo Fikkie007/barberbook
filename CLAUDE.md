@@ -77,10 +77,32 @@ For local subdomain testing:
 - Uses NextAuth.js v5 (beta) with credentials provider
 - Session strategy: JWT
 - Custom login page at `/auth/login`
-- Roles: `OWNER` (shop owner), `ADMIN` (platform admin)
+- Roles: `ADMIN` (platform admin), `OWNER` (shop owner), `CASHIER` (shop staff)
 - Session user type extended with `id` and `role` in `src/lib/auth.ts`
 - **Dual protection:** Middleware redirects unauthenticated users from `/dashboard` and `/settings`. Dashboard layout (`src/app/(dashboard)/layout.tsx`) also calls `auth()` and redirects if no session.
 - `trustHost: true` enabled for reverse proxy compatibility
+
+### Role-Based Access Control (RBAC)
+
+RBAC system in `src/lib/rbac.ts` with permission checks:
+
+| Role | Permissions |
+|------|-------------|
+| `ADMIN` | users:read/create/update/delete, shops:read:all/create/update:all, analytics:read, bookings:manage, services:manage, barbers:manage |
+| `OWNER` | Same as ADMIN (full access for owned shops) |
+| `CASHIER` | bookings:manage, services:manage (limited to assigned shop) |
+
+Helper functions:
+- `hasPermission(role, permission)` - Check if role has specific permission
+- `isAdminOrOwner(role)` - Check if role is ADMIN or OWNER
+- `isCashier(role)` - Check if role is CASHIER
+
+**Navigation filtering:** Sidebar in `src/components/layout/sidebar.tsx` filters nav items by role:
+- Items with `roles: ["ADMIN", "OWNER"]` are hidden for CASHIER
+- Items with `excludeRoles: ["CASHIER"]` are hidden for CASHIER
+- CASHIER sees only: Dashboard, Booking, Layanan
+
+**Shop access:** CASHIER users see only their assigned shop (no shop selection dropdown). ADMIN/OWNER can select from multiple shops.
 
 ### Database
 
@@ -88,6 +110,9 @@ For local subdomain testing:
 - Prisma client singleton in `src/lib/prisma.ts` (prevents multiple instances in dev, uses Pool adapter)
 - Generated Prisma types in `src/generated/prisma/`
 - Schema includes: User, Shop, Service, ServicePackage, PackageService, Barber, Booking, WorkingDay
+- User model has `isActive` field for soft delete (deactivating users instead of hard delete)
+- User model has `shopId` field for CASHIER role assignment (shop they're assigned to)
+- User-Shop relations: `OwnedShops` (OWNER's shops), `AssignedShop` (CASHIER's assigned shop)
 - Booking model has reminder tracking fields: `whatsappSent`, `confirmationSent`, `reminderSent`, `qstashMessageId`
 - Booking model has `source` field (`ONLINE` or `OFFLINE`) to track booking origin
 - Booking model has `serviceId` (optional) for single service bookings and `packageId` (optional) for package bookings
@@ -102,9 +127,14 @@ For local subdomain testing:
 - Service packages: `PackageService` junction table links packages to services with `sortOrder` for ordering; package price is independent of individual service prices (allows discounts)
 
 **Demo accounts after seeding:**
-- Owner: `owner@demo.com` / `password123`
-- Admin: `admin@barberbook.com` / `password123`
+- Owner: `owner@demo.com` / `password123` (role: OWNER)
+- Admin: `admin@barberbook.com` / `password123` (role: ADMIN)
 - Demo shop slug: `demo-barbershop`
+
+**Role-based demo accounts:**
+- ADMIN can access all shops and manage all users
+- OWNER can manage their own shops and create cashiers
+- CASHIER (create via Users page) can only access assigned shop
 
 ### API Routes
 
@@ -119,6 +149,8 @@ All API routes are in `src/app/api/`:
 - `packages/` - Shop packages management (bundle multiple services)
 - `barbers/` - Shop barbers management
 - `shops/` - Shop lookup by slug
+- `users/` - User management API (ADMIN/OWNER only; GET list, POST create)
+- `users/[id]/` - Single user operations (PATCH update, DELETE deactivate)
 
 ### WhatsApp Integration
 
@@ -149,6 +181,25 @@ docker run -d -p 4000:3000 upstash/qstash-local
 - `DashboardStats` includes revenue breakdowns: `onlineRevenue`/`offlineRevenue` (by booking source), `serviceRevenue`/`tipRevenue` (by revenue type)
 - Analytics types: `BarberPerformance`, `ServicePopularity`, `HourlyBookings`, `DailyBookings`, `CustomerFrequency`, `CustomerSegments`, `BookingTrends`, `PackageVsSingle`
 
+### Shop Helpers
+
+Shop access helper functions in `src/lib/shop-helpers.ts`:
+
+- `getUserShopIds(userId, role)` - Get accessible shop IDs based on role:
+  - ADMIN: all shops
+  - OWNER: shops they own
+  - CASHIER: assigned shop only
+
+- `getUserShops(userId, role)` - Get accessible shops with details (id, name, slug):
+  - ADMIN: all shops (ordered by name)
+  - OWNER: owned shops (ordered by creation)
+  - CASHIER: assigned shop only
+
+- `getActiveShopId(userId, role, selectedShopId)` - Get current active shop for user:
+  - ADMIN: can use first shop as default, or selected shop if valid
+  - OWNER: must explicitly select a shop (returns null if none selected)
+  - CASHIER: always returns their assigned shop
+
 ### Dashboard Features
 
 - Stats cards show booking counts and revenue totals
@@ -158,6 +209,24 @@ docker run -d -p 4000:3000 upstash/qstash-local
 - Offline booking dialog (`src/components/dashboard/offline-booking-dialog.tsx`) allows owners to create walk-in bookings with `source: OFFLINE`
 - Packages management (`src/components/dashboard/packages-client.tsx`) allows creating bundles of multiple services with discounted pricing
 - Analytics page (`src/app/(dashboard)/dashboard/analytics/page.tsx`) provides comprehensive business insights
+- Users page (`src/app/(dashboard)/dashboard/users/page.tsx`) for user management (ADMIN/OWNER only)
+
+### User Management
+
+Users page at `/dashboard/users` allows ADMIN and OWNER to:
+
+- **View users:** Shows owner + cashiers for selected shop
+- **Create cashier:** Add new CASHIER user assigned to current shop
+- **Edit user:** Update name, phone, and role (can change OWNER ↔ CASHIER)
+- **Deactivate user:** Soft delete via `isActive: false` (preserves data)
+
+User management API at `/api/users`:
+- `GET` - List all active users (ADMIN/OWNER)
+- `POST` - Create new user with role and shop assignment
+- `PATCH /api/users/[id]` - Update user details
+- `DELETE /api/users/[id]` - Deactivate user (soft delete)
+
+Users client component: `src/components/dashboard/users-client.tsx`
 
 ### Analytics Dashboard
 
@@ -203,8 +272,13 @@ Queue component is in `src/components/queue/queue-display.tsx` and uses the `/ap
 
 - Uses shadcn/ui components in `src/components/ui/`
 - Layout components in `src/components/layout/`
+- Sidebar (`src/components/layout/sidebar.tsx`) with role-based navigation filtering:
+  - Nav items can have `roles` (required roles) or `excludeRoles` (excluded roles)
+  - CASHIER excluded from: Analytics, Barbers, Settings
+  - Users page visible only for ADMIN/OWNER
+  - CASHIER sees static shop name (no selection dropdown)
 - Feature components in `src/components/booking/`, `src/components/dashboard/`, and `src/components/queue/`
-- Key dashboard components: `stats-card.tsx`, `booking-table.tsx`, `revenue-chart.tsx`, `offline-booking-dialog.tsx`, `packages-client.tsx`, `services-client.tsx`
+- Key dashboard components: `stats-card.tsx`, `booking-table.tsx`, `revenue-chart.tsx`, `offline-booking-dialog.tsx`, `packages-client.tsx`, `services-client.tsx`, `users-client.tsx`
 - Analytics components: `barber-performance-chart.tsx`, `top-barbers-card.tsx`, `service-popularity-chart.tsx`, `service-revenue-chart.tsx`, `package-vs-single-chart.tsx`, `hourly-bookings-chart.tsx`, `weekly-pattern-chart.tsx`, `booking-trends-chart.tsx`, `customer-segments-chart.tsx`, `customer-frequency-chart.tsx`, `top-customers-table.tsx`
 - Queue components: `queue-display.tsx` for live TV queue display
 - Key UI components: `tabs.tsx` for tabbed navigation (services/packages tabs)

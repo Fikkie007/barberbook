@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import BookingTable from "@/components/dashboard/booking-table";
@@ -80,7 +80,8 @@ export default function BookingsClient({
   selectedStatus,
 }: BookingsClientProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [bookings, setBookings] = useState<BookingWithRelations[]>(initialBookings);
+  const [bookings, setBookings] =
+    useState<BookingWithRelations[]>(initialBookings);
 
   // Compute status counts from current bookings state
   const statusCounts = useMemo(() => {
@@ -95,6 +96,10 @@ export default function BookingsClient({
     }
     return counts;
   }, [bookings]);
+
+  useEffect(() => {
+    setBookings(initialBookings);
+  }, [initialBookings]);
 
   const handleBookingSuccess = async () => {
     // Refresh bookings list
@@ -128,9 +133,7 @@ export default function BookingsClient({
 
       if (response.ok) {
         // Update local state
-        setBookings(
-          bookings.map((b) => (b.id === id ? { ...b, status } : b))
-        );
+        setBookings(bookings.map((b) => (b.id === id ? { ...b, status } : b)));
       }
     } catch (error) {
       console.error("Failed to update booking:", error);
@@ -154,7 +157,7 @@ export default function BookingsClient({
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2">
         <a
-          href="/dashboard/bookings"
+          href={`/dashboard/bookings?shop=${shopId}`}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             !selectedStatus
               ? "bg-amber-500 text-slate-900"
@@ -164,7 +167,7 @@ export default function BookingsClient({
           Semua ({bookings.length})
         </a>
         <a
-          href="/dashboard/bookings?status=PENDING"
+          href={`/dashboard/bookings?shop=${shopId}&status=PENDING`}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             selectedStatus === "PENDING"
               ? "bg-yellow-500 text-slate-900"
@@ -174,7 +177,7 @@ export default function BookingsClient({
           Menunggu ({statusCounts.PENDING || 0})
         </a>
         <a
-          href="/dashboard/bookings?status=CONFIRMED"
+          href={`/dashboard/bookings?shop=${shopId}&status=CONFIRMED`}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             selectedStatus === "CONFIRMED"
               ? "bg-blue-500 text-slate-900"
@@ -184,7 +187,7 @@ export default function BookingsClient({
           Dikonfirmasi ({statusCounts.CONFIRMED || 0})
         </a>
         <a
-          href="/dashboard/bookings?status=COMPLETED"
+          href={`/dashboard/bookings?shop=${shopId}&status=COMPLETED`}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             selectedStatus === "COMPLETED"
               ? "bg-green-500 text-slate-900"
@@ -194,7 +197,7 @@ export default function BookingsClient({
           Selesai ({statusCounts.COMPLETED || 0})
         </a>
         <a
-          href="/dashboard/bookings?status=CANCELLED"
+          href={`/dashboard/bookings?shop=${shopId}&status=CANCELLED`}
           className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             selectedStatus === "CANCELLED"
               ? "bg-red-500 text-slate-900"
