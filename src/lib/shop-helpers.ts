@@ -43,7 +43,7 @@ export async function getUserShops(userId: string, role: string) {
       where: { id: userId },
       select: {
         assignedShop: {
-          select: { id: true, name: true, slug: true },
+          select: { id: true, name: true, slug: true, logo: true },
         },
       },
     });
@@ -53,7 +53,7 @@ export async function getUserShops(userId: string, role: string) {
   if (role === "ADMIN") {
     // ADMIN can see all shops
     return prisma.shop.findMany({
-      select: { id: true, name: true, slug: true },
+      select: { id: true, name: true, slug: true, logo: true },
       orderBy: { name: "asc" },
     });
   }
@@ -61,7 +61,7 @@ export async function getUserShops(userId: string, role: string) {
   // OWNER sees shops they own
   return prisma.shop.findMany({
     where: { ownerId: userId },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, logo: true },
     orderBy: { createdAt: "asc" },
   });
 }

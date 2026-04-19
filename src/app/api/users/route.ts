@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdminOrOwner } from "@/lib/rbac";
+import { getUserShopIds } from "@/lib/shop-helpers";
 
 export async function GET() {
   try {
@@ -15,8 +16,35 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // ADMIN sees all users; OWNER sees users from their shops only
+    const accessibleShopIds = await getUserShopIds(
+      session.user.id,
+      session.user.role
+    );
+
+    // Build the where clause based on role
+    const whereClause =
+      session.user.role === "ADMIN"
+        ? { isActive: true } // ADMIN sees all active users
+        : {
+            // OWNER sees only users related to their accessible shops
+            isActive: true,
+            OR: [
+              // CASHIER users assigned to accessible shops
+              {
+                role: "CASHIER" as const,
+                shopId: { in: accessibleShopIds },
+              },
+              // OWNER users who own accessible shops
+              {
+                role: "OWNER" as const,
+                shops: { some: { id: { in: accessibleShopIds } } },
+              },
+            ],
+          };
+
     const users = await prisma.user.findMany({
-      where: { isActive: true },
+      where: whereClause,
       select: {
         id: true,
         name: true,
