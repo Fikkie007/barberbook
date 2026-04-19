@@ -141,7 +141,8 @@ Helper functions:
 All API routes are in `src/app/api/`:
 - `auth/[...nextauth]/` - NextAuth handlers
 - `auth/register/` - User registration
-- `bookings/` - CRUD for bookings (public create, owner manage; supports `source: ONLINE|OFFLINE` parameter; supports single service or package bookings)
+- `bookings/` - CRUD for bookings (public create, owner manage; supports `source: ONLINE|OFFLINE` parameter; supports single service or package bookings; **server-side conflict validation**)
+- `bookings/barber-availability/` - GET endpoint for real-time barber availability (returns blocked time slots for a barber on a specific date)
 - `bookings/queue/` - Get queue data for live display (returns bookings with queue positions and stats)
 - `bookings/send-reminder/` - QStash webhook for scheduled reminders
 - `cron/` - Cron endpoint for processing pending notifications (call hourly)
@@ -210,6 +211,31 @@ Shop access helper functions in `src/lib/shop-helpers.ts`:
 - Packages management (`src/components/dashboard/packages-client.tsx`) allows creating bundles of multiple services with discounted pricing
 - Analytics page (`src/app/(dashboard)/dashboard/analytics/page.tsx`) provides comprehensive business insights
 - Users page (`src/app/(dashboard)/dashboard/users/page.tsx`) for user management (ADMIN/OWNER only)
+
+### Barber Availability (Conflict Detection)
+
+The system prevents double-booking barbers through real-time conflict detection:
+
+**Implementation:**
+- New API endpoint: `/api/bookings/barber-availability/` - GET endpoint that returns blocked time slots for a barber on a specific date
+- `blockedSlots` state in booking forms: array of `{start: number, end: number}` representing blocked time ranges in minutes from midnight
+- `useEffect` hook fetches availability when barber and date are selected
+- `isTimeSlotAvailable()` function checks for overlaps with blocked slots
+- Server-side validation in `/api/bookings` POST endpoint also checks for conflicts
+
+**Overlap detection logic:**
+```typescript
+// Overlap condition: new starts before existing ends AND new ends after existing starts
+if (slotStartMinutes < blockedEndMinutes && slotEndMinutes > blockedStartMinutes) {
+  return false; // Slot is blocked
+}
+```
+
+**Affected components:**
+- `src/components/booking/booking-form.tsx` - Public booking page
+- `src/components/dashboard/offline-booking-dialog.tsx` - Offline booking dialog
+
+**Error message:** "Barber memiliki jadwal booking pada waktu tersebut. Pilih waktu lain atau barber berbeda." (HTTP 409 Conflict)
 
 ### User Management
 

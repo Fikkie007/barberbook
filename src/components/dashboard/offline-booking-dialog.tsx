@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, startOfDay, isSameDay } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -94,6 +94,7 @@ export default function OfflineBookingDialog({
 }: OfflineBookingDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [blockedSlots, setBlockedSlots] = useState<{ start: number; end: number }[]>([]);
 
   const [formData, setFormData] = useState<FormData>({
     customerName: "",
@@ -113,6 +114,32 @@ export default function OfflineBookingDialog({
   const selectedPackage = packages.find((p) => p.id === formData.packageId);
   const selectedItem = formData.selectionType === "package" ? selectedPackage : selectedService;
   const itemPrice = selectedItem?.price || 0;
+
+  // Fetch blocked time slots when barber and date are selected
+  useEffect(() => {
+    if (!formData.barberId || !formData.bookingDate) {
+      setBlockedSlots([]);
+      return;
+    }
+
+    const fetchBlockedSlots = async () => {
+      try {
+        const dateStr = formData.bookingDate!.toISOString();
+        const response = await fetch(
+          `/api/bookings/barber-availability?barberId=${formData.barberId}&date=${dateStr}`
+        );
+        const data = await response.json();
+        if (response.ok) {
+          setBlockedSlots(data.blockedSlots);
+        }
+      } catch (err) {
+        console.error("Failed to fetch barber availability:", err);
+        setBlockedSlots([]);
+      }
+    };
+
+    fetchBlockedSlots();
+  }, [formData.barberId, formData.bookingDate]);
 
   // Generate time slots based on shop hours
   const generateTimeSlots = () => {
@@ -169,7 +196,7 @@ export default function OfflineBookingDialog({
     return workingDay?.isOpen ?? false;
   };
 
-  // Check if time slot is in the past (for today)
+  // Check if time slot is available
   const isTimeSlotAvailable = (time: string) => {
     const now = new Date();
     const selectedDate = formData.bookingDate;
@@ -181,7 +208,22 @@ export default function OfflineBookingDialog({
       const [hour, min] = time.split(":").map(Number);
       const slotTime = new Date(selectedDate);
       slotTime.setHours(hour, min, 0, 0);
-      return slotTime > now;
+      if (slotTime <= now) return false;
+    }
+
+    // Check for barber conflicts if barber is selected
+    if (formData.barberId && blockedSlots.length > 0) {
+      const slotDuration = selectedItem?.duration || 60;
+      const slotStartMinutes =
+        parseInt(time.split(":")[0]) * 60 + parseInt(time.split(":")[1]);
+      const slotEndMinutes = slotStartMinutes + slotDuration;
+
+      // Check if slot overlaps with any blocked slot
+      for (const blocked of blockedSlots) {
+        if (slotStartMinutes < blocked.end && slotEndMinutes > blocked.start) {
+          return false;
+        }
+      }
     }
 
     return true;
@@ -545,7 +587,7 @@ export default function OfflineBookingDialog({
                   <Label className="text-slate-300 text-xs">Barber</Label>
                   <Select
                     value={formData.barberId}
-                    onValueChange={(value) => setFormData({ ...formData, barberId: value ?? "" })}
+                    onValueChange={(value) => setFormData({ ...formData, barberId: value ?? "", bookingTime: "" })}
                   >
                     <SelectTrigger className="w-full border-slate-600 bg-slate-700/50 text-white h-9">
                       <SelectValue placeholder="Barber manapun">
