@@ -9,7 +9,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// User - Pemilik toko atau admin
+// User - Admin, Owner, atau Cashier
 model User {
   id            String    @id @default(cuid())
   name          String
@@ -18,10 +18,14 @@ model User {
   password      String
   image         String?
   role          Role      @default(OWNER)
-  shops         Shop[]
+  isActive      Boolean   @default(true)
+  shopId        String?   // untuk CASHIER - toko yang ditugaskan
+  assignedShop  Shop?     @relation("AssignedShop", fields: [shopId], references: [id], onDelete: SetNull)
+  shops         Shop[]    @relation("OwnedShops") // untuk OWNER - toko yang dimiliki
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  @@index([shopId])
   @@map("users")
 }
 
@@ -40,7 +44,8 @@ model Shop {
   closingTime     String     @default("21:00") // jam tutup
   isActive        Boolean    @default(true)
   ownerId         String
-  owner           User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner           User       @relation("OwnedShops", fields: [ownerId], references: [id], onDelete: Cascade)
+  assignedUsers   User[]     @relation("AssignedShop") // CASHIER yang ditugaskan ke toko ini
   bookings        Booking[]
   services        Service[]
   packages        ServicePackage[]
@@ -178,8 +183,9 @@ model WorkingDay {
 
 // Enum untuk role user
 enum Role {
-  OWNER
-  ADMIN
+  ADMIN    // Platform admin - full access
+  OWNER    // Shop owner - full access (same as ADMIN)
+  CASHIER  // Shop staff - limited to assigned shop
 }
 
 // Enum untuk status booking

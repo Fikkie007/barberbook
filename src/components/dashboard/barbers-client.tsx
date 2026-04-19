@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -21,7 +26,10 @@ interface BarbersClientProps {
   initialBarbers: Barber[];
 }
 
-export default function BarbersClient({ shopId, initialBarbers }: BarbersClientProps) {
+export default function BarbersClient({
+  shopId,
+  initialBarbers,
+}: BarbersClientProps) {
   const [barbers, setBarbers] = useState<Barber[]>(initialBarbers);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
@@ -31,6 +39,10 @@ export default function BarbersClient({ shopId, initialBarbers }: BarbersClientP
     name: "",
     phone: "",
   });
+
+  useEffect(() => {
+    setBarbers(initialBarbers);
+  }, [initialBarbers]);
 
   const resetForm = () => {
     setFormData({ name: "", phone: "" });
@@ -70,7 +82,9 @@ export default function BarbersClient({ shopId, initialBarbers }: BarbersClientP
       if (response.ok) {
         const data = await response.json();
         if (editingBarber) {
-          setBarbers(barbers.map((b) => (b.id === editingBarber.id ? data.barber : b)));
+          setBarbers(
+            barbers.map((b) => (b.id === editingBarber.id ? data.barber : b)),
+          );
         } else {
           setBarbers([...barbers, data.barber]);
         }
@@ -132,7 +146,9 @@ export default function BarbersClient({ shopId, initialBarbers }: BarbersClientP
               <Label className="text-slate-300">Nama Barber</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Ahmad"
                 className="border-slate-600 bg-slate-700 text-white"
                 required
@@ -142,7 +158,9 @@ export default function BarbersClient({ shopId, initialBarbers }: BarbersClientP
               <Label className="text-slate-300">Nomor HP (Opsional)</Label>
               <Input
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
                 placeholder="08123456789"
                 className="border-slate-600 bg-slate-700 text-white"
               />

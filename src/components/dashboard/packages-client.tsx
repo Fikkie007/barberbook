@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Package } from "lucide-react";
 
 interface Service {
@@ -41,10 +46,16 @@ interface PackagesClientProps {
   services: Service[];
 }
 
-export default function PackagesClient({ shopId, initialPackages, services }: PackagesClientProps) {
+export default function PackagesClient({
+  shopId,
+  initialPackages,
+  services,
+}: PackagesClientProps) {
   const [packages, setPackages] = useState<ServicePackage[]>(initialPackages);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingPackage, setEditingPackage] = useState<ServicePackage | null>(null);
+  const [editingPackage, setEditingPackage] = useState<ServicePackage | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -55,8 +66,18 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
     serviceIds: [] as string[],
   });
 
+  useEffect(() => {
+    setPackages(initialPackages);
+  }, [initialPackages]);
+
   const resetForm = () => {
-    setFormData({ name: "", description: "", price: "", duration: "60", serviceIds: [] });
+    setFormData({
+      name: "",
+      description: "",
+      price: "",
+      duration: "60",
+      serviceIds: [],
+    });
     setEditingPackage(null);
   };
 
@@ -68,7 +89,7 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
         description: pkg.description || "",
         price: pkg.price.toString(),
         duration: pkg.duration.toString(),
-        serviceIds: pkg.services.map(ps => ps.serviceId),
+        serviceIds: pkg.services.map((ps) => ps.serviceId),
       });
     } else {
       resetForm();
@@ -77,10 +98,13 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
   };
 
   const handleServiceToggle = (serviceId: string) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const isSelected = prev.serviceIds.includes(serviceId);
       if (isSelected) {
-        return { ...prev, serviceIds: prev.serviceIds.filter(id => id !== serviceId) };
+        return {
+          ...prev,
+          serviceIds: prev.serviceIds.filter((id) => id !== serviceId),
+        };
       } else {
         return { ...prev, serviceIds: [...prev.serviceIds, serviceId] };
       }
@@ -113,7 +137,11 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
       if (response.ok) {
         const data = await response.json();
         if (editingPackage) {
-          setPackages(packages.map((p) => (p.id === editingPackage.id ? data.package : p)));
+          setPackages(
+            packages.map((p) =>
+              p.id === editingPackage.id ? data.package : p,
+            ),
+          );
         } else {
           setPackages([...packages, data.package]);
         }
@@ -153,12 +181,12 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
 
   const calculateServicesTotal = () => {
     return formData.serviceIds.reduce((total, serviceId) => {
-      const service = services.find(s => s.id === serviceId);
+      const service = services.find((s) => s.id === serviceId);
       return total + (service?.price || 0);
     }, 0);
   };
 
-  const activeServices = services.filter(s => s.isActive);
+  const activeServices = services.filter((s) => s.isActive);
 
   return (
     <div className="space-y-6">
@@ -185,7 +213,9 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
               <Label className="text-slate-300">Nama Paket</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Paket Grooming Lengkap"
                 className="border-slate-600 bg-slate-700 text-white"
                 required
@@ -195,7 +225,9 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
               <Label className="text-slate-300">Deskripsi</Label>
               <Textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Deskripsi paket..."
                 className="border-slate-600 bg-slate-700 text-white"
               />
@@ -214,17 +246,24 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
                       onChange={() => handleServiceToggle(service.id)}
                       className="rounded border-slate-500"
                     />
-                    <span className="text-slate-300 text-sm flex-1">{service.name}</span>
-                    <span className="text-amber-400 text-xs">Rp {service.price.toLocaleString("id-ID")}</span>
+                    <span className="text-slate-300 text-sm flex-1">
+                      {service.name}
+                    </span>
+                    <span className="text-amber-400 text-xs">
+                      Rp {service.price.toLocaleString("id-ID")}
+                    </span>
                   </label>
                 ))}
                 {activeServices.length === 0 && (
-                  <p className="text-slate-400 text-sm text-center">Tidak ada layanan aktif</p>
+                  <p className="text-slate-400 text-sm text-center">
+                    Tidak ada layanan aktif
+                  </p>
                 )}
               </div>
               {formData.serviceIds.length > 0 && (
                 <p className="text-xs text-slate-400">
-                  Total layanan: Rp {calculateServicesTotal().toLocaleString("id-ID")}
+                  Total layanan: Rp{" "}
+                  {calculateServicesTotal().toLocaleString("id-ID")}
                 </p>
               )}
             </div>
@@ -234,7 +273,9 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
                 <Input
                   type="number"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
                   placeholder="100000"
                   className="border-slate-600 bg-slate-700 text-white"
                   required
@@ -245,7 +286,9 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
                 <Input
                   type="number"
                   value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, duration: e.target.value })
+                  }
                   placeholder="60"
                   className="border-slate-600 bg-slate-700 text-white"
                   required
@@ -310,7 +353,9 @@ export default function PackagesClient({ shopId, initialPackages, services }: Pa
                 <span className="text-lg font-bold text-amber-400">
                   Rp {pkg.price.toLocaleString("id-ID")}
                 </span>
-                <span className="text-sm text-slate-400">{pkg.duration} menit</span>
+                <span className="text-sm text-slate-400">
+                  {pkg.duration} menit
+                </span>
               </div>
               <button
                 onClick={() => handleToggleActive(pkg.id, !pkg.isActive)}

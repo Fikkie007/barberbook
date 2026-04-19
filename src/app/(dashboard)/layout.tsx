@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import Sidebar from "@/components/layout/sidebar";
+import { getUserShops } from "@/lib/shop-helpers";
 
 export default async function DashboardLayout({
   children,
@@ -14,16 +14,8 @@ export default async function DashboardLayout({
     redirect("/auth/login");
   }
 
-  // Get user's shops
-  const shops = await prisma.shop.findMany({
-    where: { ownerId: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      logo: true,
-    },
-  });
+  // Get shops based on role using centralized helper
+  const shops = await getUserShops(session.user.id, session.user.role);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">

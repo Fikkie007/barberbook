@@ -10,6 +10,7 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 - 📺 **Live Queue Display** - Display antrian real-time untuk TV di area waiting (mode TV)
 - 💬 **Notifikasi WhatsApp Otomatis** - Konfirmasi, reminder, dan notifikasi otomatis
 - 🏪 **Multi-tenant** - Setiap toko memiliki subdomain unik
+- 👥 **Multi-role User Management** - Admin, Owner, dan Cashier dengan permission berbeda
 - 📊 **Dashboard Owner** - Kelola booking, layanan, paket, dan barber dengan breakdown revenue online vs offline
 - 📈 **Analytics** - Insight bisnis lengkap: performa barber, layanan populer, pola waktu, dan segmentasi pelanggan
 - 📱 **Mobile Friendly** - Responsif di semua perangkat
@@ -179,6 +180,25 @@ Cocok untuk:
 - Customer bisa lihat posisi antrian
 - Barber bisa monitor antrian dari jarak jauh
 
+### User Management (Pengguna)
+
+ADMIN dan OWNER bisa mengelola pengguna di dashboard:
+
+- **Tambah Cashier** - Buat akun cashier untuk toko tertentu
+- **Edit Pengguna** - Ubah nama, telepon, dan role
+- **Nonaktifkan Pengguna** - Soft delete pengguna tanpa hapus data
+
+Halaman Users (`/dashboard/users`) hanya visible untuk ADMIN dan OWNER.
+Cashier tidak bisa mengakses halaman ini.
+
+**Penugasan Cashier:**
+1. Pilih toko dari sidebar
+2. Buka halaman "Pengguna"
+3. Klik "Tambah Pengguna"
+4. Isi form: nama, email, password, telepon
+5. Cashier akan ditugaskan ke toko yang dipilih
+6. Cashier hanya bisa mengakses booking dan layanan di toko tersebut
+
 ## Demo Account
 
 Setelah menjalankan seed, gunakan akun berikut:
@@ -186,6 +206,20 @@ Setelah menjalankan seed, gunakan akun berikut:
 - **Email:** owner@demo.com
 - **Password:** password123
 - **Demo shop slug:** `demo-barbershop`
+
+## User Roles & Permissions
+
+BarberBook mendukung 3 role dengan permission berbeda:
+
+| Role | Akses |
+|------|-------|
+| **ADMIN** | Full access: semua toko, kelola pengguna, analytics, settings |
+| **OWNER** | Full access untuk toko miliknya: kelola pengguna, analytics, settings |
+| **CASHIER** | Limited access: hanya booking & layanan di toko yang ditugaskan |
+
+**Permission per Role:**
+- `ADMIN` & `OWNER`: users:read/create/update/delete, analytics:read, bookings:manage, services:manage, barbers:manage
+- `CASHIER`: bookings:manage, services:manage (hanya di toko yang ditugaskan)
 
 ## Multi-tenant Routing
 
@@ -655,9 +689,13 @@ src/
 │   │       ├── analytics/   # Analytics page
 │   │       ├── bookings/    # Booking management
 │   │       ├── services/    # Services & packages
-│   │       └ barbers/     # Barber management
+│   │       ├── barbers/     # Barber management
+│   │       ├── users/       # User management (ADMIN/OWNER)
+│   │       └── settings/    # Shop settings
 │   ├── (public)/        # Landing page
 │   ├── api/             # API routes
+│   │   ├── users/       # User CRUD API
+│   │   └─ ...           # Other API routes
 │   ├── auth/            # Auth pages
 │   ├── booking/         # Public booking pages
 │   └── queue/           # Live queue display (TV mode)
@@ -665,17 +703,20 @@ src/
 │   ├── ui/              # shadcn/ui components
 │   ├── layout/          # Layout components
 │   ├── dashboard/       # Dashboard components
-│   │   └ analytics/   # Analytics charts
+│   │   └ analytics/     # Analytics charts
+│   │   └ users-client.tsx  # User management
 │   ├── booking/         # Booking components
 │   └── queue/           # Queue display components
 ├── lib/
 │   ├── auth.ts          # NextAuth config
 │   ├── prisma.ts        # Prisma client
+│   ├── rbac.ts          # Role-based access control
+│   ├── shop-helpers.ts  # Shop access helpers
 │   ├── whatsapp.ts      # WhatsApp API
 │   ├── qstash.ts        # QStash client
 │   └── qstash-verify.ts # QStash webhook verification
 ├── scripts/
-│   └── test-qstash.ts   # QStash test script
+│   └ test-qstash.ts     # QStash test script
 └── types/               # TypeScript types
 ```
 

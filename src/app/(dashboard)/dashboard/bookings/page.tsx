@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import BookingsClient from "@/components/dashboard/bookings-client";
+import { getUserShops, getActiveShopId } from "@/lib/shop-helpers";
 
 export default async function BookingsPage({
   searchParams,
@@ -18,21 +19,37 @@ export default async function BookingsPage({
   const selectedShopId = params.shop;
   const selectedStatus = params.status;
 
-  // Get user's shops
-  const shops = await prisma.shop.findMany({
-    where: { ownerId: session.user.id },
-    select: { id: true, name: true },
-  });
+  // Get user's shops based on role
+  const shops = await getUserShops(session.user.id, session.user.role);
 
-  if (shops.length === 0) {
+  // Get active shop ID
+  const activeShopId = await getActiveShopId(
+    session.user.id,
+    session.user.role,
+    selectedShopId,
+  );
+
+  // OWNER must select a shop first
+  if (!activeShopId) {
+    if (session.user.role === "OWNER" && shops.length > 0) {
+      return (
+        <div className="flex h-[calc(100vh-8rem)] flex-col items-center justify-center text-center">
+          <h2 className="text-2xl font-bold text-white">Pilih Toko</h2>
+          <p className="mt-2 text-slate-400">
+            Silakan pilih toko dari sidebar untuk melihat booking.
+          </p>
+        </div>
+      );
+    }
     redirect("/dashboard");
   }
 
-  const activeShopId = selectedShopId || shops[0].id;
-
   // Build filter
   const where: Record<string, unknown> = { shopId: activeShopId };
-  if (selectedStatus && ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].includes(selectedStatus)) {
+  if (
+    selectedStatus &&
+    ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].includes(selectedStatus)
+  ) {
     where.status = selectedStatus;
   }
 

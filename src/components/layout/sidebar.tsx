@@ -17,6 +17,7 @@ import {
   Store,
   Plus,
   BarChart3,
+  UserCog,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -34,13 +35,42 @@ interface SidebarProps {
   }>;
 }
 
-const navItems = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles?: string[];
+  excludeRoles?: string[];
+}
+
+const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+  {
+    href: "/dashboard/analytics",
+    label: "Analytics",
+    icon: BarChart3,
+    excludeRoles: ["CASHIER"],
+  },
   { href: "/dashboard/bookings", label: "Booking", icon: CalendarDays },
   { href: "/dashboard/services", label: "Layanan", icon: Scissors },
-  { href: "/dashboard/barbers", label: "Barber", icon: Users },
-  { href: "/dashboard/settings", label: "Pengaturan", icon: Settings },
+  {
+    href: "/dashboard/barbers",
+    label: "Barber",
+    icon: Users,
+    excludeRoles: ["CASHIER"],
+  },
+  {
+    href: "/dashboard/users",
+    label: "Pengguna",
+    icon: UserCog,
+    roles: ["ADMIN", "OWNER"],
+  },
+  {
+    href: "/dashboard/settings",
+    label: "Pengaturan",
+    icon: Settings,
+    excludeRoles: ["CASHIER"],
+  },
 ];
 
 function NavContent({ user, shops }: SidebarProps) {
@@ -83,18 +113,32 @@ function NavContent({ user, shops }: SidebarProps) {
       {shops.length > 0 && (
         <div className="px-4 py-2">
           <p className="mb-2 text-xs font-semibold uppercase text-slate-400">
-            Toko Anda
+            {user.role === "CASHIER" ? "Toko Anda" : "Pilih Toko"}
           </p>
           <div className="space-y-1">
             {shops.map((shop, index) => {
               const shopParam = searchParams.get("shop");
               const isShopActive = shopParam
                 ? shopParam === shop.id
-                : index === 0 && pathname === "/dashboard";
+                : index === 0 && pathname === "/dashboard" && user.role !== "OWNER";
+
+              // CASHIER sees static shop name (no link since only one shop)
+              if (user.role === "CASHIER") {
+                return (
+                  <div
+                    key={shop.id}
+                    className="flex items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-400"
+                  >
+                    <Store className="h-4 w-4" />
+                    {shop.name}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={shop.id}
-                  href={`/dashboard?shop=${shop.id}`}
+                  href={`${pathname}?shop=${shop.id}`}
                   className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isShopActive
                       ? "bg-amber-500/10 text-amber-400"
@@ -107,16 +151,19 @@ function NavContent({ user, shops }: SidebarProps) {
               );
             })}
           </div>
-          <Link href="/dashboard/settings?new=true">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2 w-full justify-start text-slate-400 hover:text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Toko
-            </Button>
-          </Link>
+          {/* Only show "Tambah Toko" for non-CASHIER */}
+          {user.role !== "CASHIER" && (
+            <Link href="/dashboard/settings?new=true">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 w-full justify-start text-slate-400 hover:bg-slate-700/50 hover:text-white"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Tambah Toko
+              </Button>
+            </Link>
+          )}
         </div>
       )}
 
@@ -124,26 +171,46 @@ function NavContent({ user, shops }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4">
-        {navItems.map((item) => {
-          const isActive =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-amber-500/10 text-amber-400"
-                  : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          );
-        })}
+        {navItems
+          .filter((item) => {
+            // Check if item has specific roles requirement
+            if (item.roles && !item.roles.includes(user.role)) {
+              return false;
+            }
+            // Check if item is excluded for certain roles
+            if (item.excludeRoles && item.excludeRoles.includes(user.role)) {
+              return false;
+            }
+            return true;
+          })
+          .map((item) => {
+            const isActive =
+              item.href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
+
+            // Preserve shop param in nav links
+            const currentShop = searchParams.get("shop");
+            const navHref = currentShop
+              ? `${item.href}?shop=${currentShop}`
+              : item.href;
+
+            return (
+              <Link
+                key={item.href}
+                href={navHref}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-amber-500/10 text-amber-400"
+                    : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            );
+          })}
       </nav>
 
       <Separator className="bg-slate-700" />
@@ -172,11 +239,16 @@ export default function Sidebar({ user, shops }: SidebarProps) {
       <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-slate-700 bg-slate-900/95 px-4 backdrop-blur lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger
-            render={<Button variant="ghost" size="icon" className="text-white" />}
+            render={
+              <Button variant="ghost" size="icon" className="text-white" />
+            }
           >
             <Menu className="h-6 w-6" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 border-slate-700 bg-slate-900 p-0">
+          <SheetContent
+            side="left"
+            className="w-64 border-slate-700 bg-slate-900 p-0"
+          >
             <NavContent user={user} shops={shops} />
           </SheetContent>
         </Sheet>
