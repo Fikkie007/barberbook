@@ -44,7 +44,7 @@ export default async function BookingsPage({
     redirect("/dashboard");
   }
 
-  // Build filter
+  // Build filter for bookings query
   const where: Record<string, unknown> = { shopId: activeShopId };
   if (
     selectedStatus &&
@@ -53,8 +53,8 @@ export default async function BookingsPage({
     where.status = selectedStatus;
   }
 
-  // Get bookings, services, packages, barbers, and shop data
-  const [bookings, services, packages, barbers, shop] = await Promise.all([
+  // Get bookings, services, packages, barbers, shop data, and status counts
+  const [bookings, services, packages, barbers, shop, statusCounts] = await Promise.all([
     // Bookings
     prisma.booking.findMany({
       where,
@@ -111,12 +111,31 @@ export default async function BookingsPage({
         },
       },
     }),
+    // Status counts for filter tabs
+    prisma.booking.groupBy({
+      by: ["status"],
+      where: { shopId: activeShopId },
+      _count: true,
+    }),
   ]);
+
+  const countsMap = {
+    PENDING: 0,
+    CONFIRMED: 0,
+    COMPLETED: 0,
+    CANCELLED: 0,
+    total: 0,
+  };
+  for (const item of statusCounts) {
+    countsMap[item.status as keyof typeof countsMap] = item._count;
+    countsMap.total += item._count;
+  }
 
   return (
     <BookingsClient
       shopId={activeShopId}
       initialBookings={bookings}
+      statusCounts={countsMap}
       services={services}
       packages={packages}
       barbers={barbers}
