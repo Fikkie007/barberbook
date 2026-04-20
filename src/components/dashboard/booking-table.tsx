@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,8 @@ const sourceLabels: Record<string, string> = {
 };
 
 export default function BookingTable({ bookings, onStatusUpdate }: BookingTableProps) {
+  const router = useRouter();
+
   const handleStatusUpdate = async (id: string, status: string) => {
     if (onStatusUpdate) {
       onStatusUpdate(id, status);
@@ -78,7 +81,7 @@ export default function BookingTable({ bookings, onStatusUpdate }: BookingTableP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      window.location.reload();
+      router.refresh();
     } catch (error) {
       console.error("Failed to update booking:", error);
     }

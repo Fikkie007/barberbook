@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import BookingTable from "@/components/dashboard/booking-table";
@@ -89,6 +90,7 @@ export default function BookingsClient({
   shopHours,
   selectedStatus,
 }: BookingsClientProps) {
+  const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookings, setBookings] =
     useState<BookingWithRelations[]>(initialBookings);
@@ -98,8 +100,7 @@ export default function BookingsClient({
   }, [initialBookings]);
 
   const handleBookingSuccess = () => {
-    // Reload page to refresh bookings and counts
-    window.location.reload();
+    router.refresh();
   };
 
   const handleStatusUpdate = async (id: string, status: string) => {
@@ -111,8 +112,7 @@ export default function BookingsClient({
       });
 
       if (response.ok) {
-        // Reload page to update counts and bookings
-        window.location.reload();
+        router.refresh();
       }
     } catch (error) {
       console.error("Failed to update booking:", error);
