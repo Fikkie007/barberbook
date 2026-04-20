@@ -78,6 +78,13 @@ export interface TimeSlot {
   barberName?: string;
 }
 
+// Blocked time slot for barber availability
+export interface BlockedSlot {
+  start: number;      // minutes from midnight
+  end: number;        // minutes from midnight
+  bookingId: string;
+}
+
 // Chart data
 export interface RevenueData {
   date: string;

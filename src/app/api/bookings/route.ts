@@ -102,19 +102,20 @@ export async function POST(request: NextRequest) {
       }
 
       // Check for conflicting bookings for this barber
-      const bookingDateObj = new Date(bookingDate);
-      const year = bookingDateObj.getUTCFullYear();
-      const month = bookingDateObj.getUTCMonth();
-      const day = bookingDateObj.getUTCDate();
-      const startOfDayUTC = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
-      const endOfDayUTC = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+      // Parse booking date from ISO string to get local date components
+      const bookingDateLocal = new Date(bookingDate);
+      const year = bookingDateLocal.getFullYear();
+      const month = bookingDateLocal.getMonth();
+      const day = bookingDateLocal.getDate();
+      const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
 
       const existingBookings = await prisma.booking.findMany({
         where: {
           barberId: validBarberId,
           bookingDate: {
-            gte: startOfDayUTC,
-            lte: endOfDayUTC,
+            gte: startOfDay,
+            lte: endOfDay,
           },
           status: { in: ["PENDING", "CONFIRMED"] },
         },

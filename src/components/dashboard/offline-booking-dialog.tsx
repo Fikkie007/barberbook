@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { format, startOfDay, isSameDay } from "date-fns";
-import { id } from "date-fns/locale";
+import { useState } from "react";
+import { startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -17,7 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Phone, Scissors, CalendarDays, Clock, User2, Mail, FileText, Package } from "lucide-react";
+import { User, Scissors, CalendarDays, Clock, FileText } from "lucide-react";
+import { useBarberAvailability, isTimeSlotAvailable } from "@/hooks/use-barber-availability";
 
 interface Service {
   id: string;
@@ -94,7 +93,6 @@ export default function OfflineBookingDialog({
 }: OfflineBookingDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [blockedSlots, setBlockedSlots] = useState<{ start: number; end: number }[]>([]);
 
   const [formData, setFormData] = useState<FormData>({
     customerName: "",
@@ -115,31 +113,8 @@ export default function OfflineBookingDialog({
   const selectedItem = formData.selectionType === "package" ? selectedPackage : selectedService;
   const itemPrice = selectedItem?.price || 0;
 
-  // Fetch blocked time slots when barber and date are selected
-  useEffect(() => {
-    if (!formData.barberId || !formData.bookingDate) {
-      setBlockedSlots([]);
-      return;
-    }
-
-    const fetchBlockedSlots = async () => {
-      try {
-        const dateStr = formData.bookingDate!.toISOString();
-        const response = await fetch(
-          `/api/bookings/barber-availability?barberId=${formData.barberId}&date=${dateStr}`
-        );
-        const data = await response.json();
-        if (response.ok) {
-          setBlockedSlots(data.blockedSlots);
-        }
-      } catch (err) {
-        console.error("Failed to fetch barber availability:", err);
-        setBlockedSlots([]);
-      }
-    };
-
-    fetchBlockedSlots();
-  }, [formData.barberId, formData.bookingDate]);
+  // Use shared hook for barber availability
+  const blockedSlots = useBarberAvailability(formData.barberId, formData.bookingDate);
 
   // Generate time slots based on shop hours
   const generateTimeSlots = () => {
@@ -196,41 +171,18 @@ export default function OfflineBookingDialog({
     return workingDay?.isOpen ?? false;
   };
 
-  // Check if time slot is available
-  const isTimeSlotAvailable = (time: string) => {
-    const now = new Date();
-    const selectedDate = formData.bookingDate;
-
-    if (!selectedDate) return true;
-
-    // If selected date is today, check if time has passed
-    if (isSameDay(selectedDate, now)) {
-      const [hour, min] = time.split(":").map(Number);
-      const slotTime = new Date(selectedDate);
-      slotTime.setHours(hour, min, 0, 0);
-      if (slotTime <= now) return false;
-    }
-
-    // Check for barber conflicts if barber is selected
-    if (formData.barberId && blockedSlots.length > 0) {
-      const slotDuration = selectedItem?.duration || 60;
-      const slotStartMinutes =
-        parseInt(time.split(":")[0]) * 60 + parseInt(time.split(":")[1]);
-      const slotEndMinutes = slotStartMinutes + slotDuration;
-
-      // Check if slot overlaps with any blocked slot
-      for (const blocked of blockedSlots) {
-        if (slotStartMinutes < blocked.end && slotEndMinutes > blocked.start) {
-          return false;
-        }
-      }
-    }
-
-    return true;
+  // Wrapper for shared isTimeSlotAvailable helper
+  const checkTimeSlotAvailable = (time: string) => {
+    return isTimeSlotAvailable(
+      time,
+      selectedItem?.duration || 60,
+      blockedSlots,
+      formData.bookingDate
+    );
   };
 
   // Get available time slots for selected date
-  const availableTimeSlots = timeSlots.filter(isTimeSlotAvailable);
+  const availableTimeSlots = timeSlots.filter(checkTimeSlotAvailable);
 
   const resetForm = () => {
     setFormData({

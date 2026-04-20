@@ -14,19 +14,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const bookingDateObj = new Date(date);
-    const year = bookingDateObj.getUTCFullYear();
-    const month = bookingDateObj.getUTCMonth();
-    const day = bookingDateObj.getUTCDate();
-    const startOfDayUTC = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
-    const endOfDayUTC = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+    // Parse date as local date (YYYY-MM-DD format)
+    // The frontend sends dates in local format, not ISO UTC
+    const [year, month, day] = date.split("-").map(Number);
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
     const bookings = await prisma.booking.findMany({
       where: {
         barberId,
         bookingDate: {
-          gte: startOfDayUTC,
-          lte: endOfDayUTC,
+          gte: startOfDay,
+          lte: endOfDay,
         },
         status: { in: ["PENDING", "CONFIRMED"] },
       },

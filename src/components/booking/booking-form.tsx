@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { format, startOfDay, isSameDay } from "date-fns";
+import { useState } from "react";
+import { format, startOfDay } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Service, Barber, WorkingDayData, ServicePackage } from "@/types";
+import { useBarberAvailability, isTimeSlotAvailable } from "@/hooks/use-barber-availability";
 
 interface PackageServiceItem {
   id: string;
@@ -81,7 +82,6 @@ export default function BookingForm({ shop }: BookingFormProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [blockedSlots, setBlockedSlots] = useState<{ start: number; end: number }[]>([]);
 
   const [formData, setFormData] = useState<FormData>({
     serviceId: "",
@@ -104,35 +104,10 @@ export default function BookingForm({ shop }: BookingFormProps) {
     (p) => p.id === formData.packageId,
   );
   const selectedBarber = shop.barbers.find((b) => b.id === formData.barberId);
-
-  // Fetch blocked time slots when barber and date are selected
-  useEffect(() => {
-    if (!formData.barberId || !formData.bookingDate) {
-      setBlockedSlots([]);
-      return;
-    }
-
-    const fetchBlockedSlots = async () => {
-      try {
-        const dateStr = formData.bookingDate!.toISOString();
-        const response = await fetch(
-          `/api/bookings/barber-availability?barberId=${formData.barberId}&date=${dateStr}`
-        );
-        const data = await response.json();
-        if (response.ok) {
-          setBlockedSlots(data.blockedSlots);
-        }
-      } catch (err) {
-        console.error("Failed to fetch barber availability:", err);
-        setBlockedSlots([]);
-      }
-    };
-
-    fetchBlockedSlots();
-  }, [formData.barberId, formData.bookingDate]);
-
-  // Get the selected item (service or package)
   const selectedItem = formData.selectionType === "package" ? selectedPackage : selectedService;
+
+  // Use shared hook for barber availability
+  const blockedSlots = useBarberAvailability(formData.barberId, formData.bookingDate);
   const itemPrice = selectedItem?.price || 0;
 
   // Generate time slots based on shop hours
@@ -163,44 +138,21 @@ export default function BookingForm({ shop }: BookingFormProps) {
 
   const timeSlots = generateTimeSlots();
 
-  // Check if date is available
+  // Check if date is available based on working days
   const isDateAvailable = (date: Date) => {
     const dayOfWeek = date.getDay();
     const workingDay = shop.workingDays.find((w) => w.dayOfWeek === dayOfWeek);
     return workingDay?.isOpen ?? false;
   };
 
-  // Check if time slot is available
-  const isTimeSlotAvailable = (time: string) => {
-    const now = new Date();
-    const selectedDate = formData.bookingDate;
-
-    if (!selectedDate) return true;
-
-    // If selected date is today, check if time has passed
-    if (isSameDay(selectedDate, now)) {
-      const [hour, min] = time.split(":").map(Number);
-      const slotTime = new Date(selectedDate);
-      slotTime.setHours(hour, min, 0, 0);
-      if (slotTime <= now) return false;
-    }
-
-    // Check for barber conflicts if barber is selected
-    if (formData.barberId && blockedSlots.length > 0) {
-      const slotDuration = selectedItem?.duration || 60;
-      const slotStartMinutes =
-        parseInt(time.split(":")[0]) * 60 + parseInt(time.split(":")[1]);
-      const slotEndMinutes = slotStartMinutes + slotDuration;
-
-      // Check if slot overlaps with any blocked slot
-      for (const blocked of blockedSlots) {
-        if (slotStartMinutes < blocked.end && slotEndMinutes > blocked.start) {
-          return false;
-        }
-      }
-    }
-
-    return true;
+  // Wrapper for shared isTimeSlotAvailable helper
+  const checkTimeSlotAvailable = (time: string) => {
+    return isTimeSlotAvailable(
+      time,
+      selectedItem?.duration || 60,
+      blockedSlots,
+      formData.bookingDate
+    );
   };
 
   const handleInputChange = (
@@ -542,7 +494,7 @@ export default function BookingForm({ shop }: BookingFormProps) {
                 <Label className="text-slate-300">Pilih Waktu</Label>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {timeSlots.map((time) => {
-                    const available = isTimeSlotAvailable(time);
+                    const available = checkTimeSlotAvailable(time);
                     return (
                       <button
                         key={time}
