@@ -100,6 +100,60 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
+
+      // Check for conflicting bookings for this barber
+      // Parse booking date from ISO string to get local date components
+      const bookingDateLocal = new Date(bookingDate);
+      const year = bookingDateLocal.getFullYear();
+      const month = bookingDateLocal.getMonth();
+      const day = bookingDateLocal.getDate();
+      const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
+
+      const existingBookings = await prisma.booking.findMany({
+        where: {
+          barberId: validBarberId,
+          bookingDate: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+          status: { in: ["PENDING", "CONFIRMED"] },
+        },
+        include: {
+          service: true,
+          package: true,
+        },
+      });
+
+      // Convert requested time to minutes
+      const requestedMinutes =
+        parseInt(bookingTime.split(":")[0]) * 60 +
+        parseInt(bookingTime.split(":")[1]);
+      const requestedEndMinutes = requestedMinutes + duration;
+
+      // Check for overlap with each existing booking
+      for (const existing of existingBookings) {
+        const existingMinutes =
+          parseInt(existing.bookingTime.split(":")[0]) * 60 +
+          parseInt(existing.bookingTime.split(":")[1]);
+        const existingDuration =
+          existing.service?.duration || existing.package?.duration || 60;
+        const existingEndMinutes = existingMinutes + existingDuration;
+
+        // Overlap: new starts before existing ends AND new ends after existing starts
+        if (
+          requestedMinutes < existingEndMinutes &&
+          requestedEndMinutes > existingMinutes
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                "Barber memiliki jadwal booking pada waktu tersebut. Pilih waktu lain atau barber berbeda.",
+            },
+            { status: 409 }
+          );
+        }
+      }
     }
 
     // Determine booking source - default to ONLINE if not specified

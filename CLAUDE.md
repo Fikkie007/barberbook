@@ -141,7 +141,8 @@ Helper functions:
 All API routes are in `src/app/api/`:
 - `auth/[...nextauth]/` - NextAuth handlers
 - `auth/register/` - User registration
-- `bookings/` - CRUD for bookings (public create, owner manage; supports `source: ONLINE|OFFLINE` parameter; supports single service or package bookings)
+- `bookings/` - CRUD for bookings (public create, owner manage; supports `source: ONLINE|OFFLINE` parameter; supports single service or package bookings; **server-side conflict validation**)
+- `bookings/barber-availability/` - GET endpoint for real-time barber availability (returns blocked time slots for a barber on a specific date)
 - `bookings/queue/` - Get queue data for live display (returns bookings with queue positions and stats)
 - `bookings/send-reminder/` - QStash webhook for scheduled reminders
 - `cron/` - Cron endpoint for processing pending notifications (call hourly)
@@ -179,7 +180,15 @@ docker run -d -p 4000:3000 upstash/qstash-local
 - Prisma types re-exported for use throughout app
 - Extended types: `ShopWithDetails`, `BookingWithDetails`, `DashboardStats`
 - `DashboardStats` includes revenue breakdowns: `onlineRevenue`/`offlineRevenue` (by booking source), `serviceRevenue`/`tipRevenue` (by revenue type)
+- `BlockedSlot` for barber availability: `{start: number, end: number, bookingId: string}` (minutes from midnight)
 - Analytics types: `BarberPerformance`, `ServicePopularity`, `HourlyBookings`, `DailyBookings`, `CustomerFrequency`, `CustomerSegments`, `BookingTrends`, `PackageVsSingle`
+
+### Hooks
+
+Custom React hooks in `src/hooks/`:
+
+- `useBarberAvailability(barberId, date)` - Fetches blocked time slots for a barber on a specific date, returns `BlockedSlot[]`
+- `isTimeSlotAvailable(time, duration, blockedSlots, selectedDate)` - Helper function to check if a time slot is available (handles today check + overlap detection)
 
 ### Shop Helpers
 
@@ -210,6 +219,36 @@ Shop access helper functions in `src/lib/shop-helpers.ts`:
 - Packages management (`src/components/dashboard/packages-client.tsx`) allows creating bundles of multiple services with discounted pricing
 - Analytics page (`src/app/(dashboard)/dashboard/analytics/page.tsx`) provides comprehensive business insights
 - Users page (`src/app/(dashboard)/dashboard/users/page.tsx`) for user management (ADMIN/OWNER only)
+
+### Barber Availability (Conflict Detection)
+
+The system prevents double-booking barbers through real-time conflict detection:
+
+**Implementation:**
+- API endpoint: `/api/bookings/barber-availability/` - GET endpoint that returns blocked time slots for a barber on a specific date
+- Shared hook: `src/hooks/use-barber-availability.ts` - `useBarberAvailability(barberId, date)` returns `BlockedSlot[]`
+- Shared helper: `isTimeSlotAvailable(time, duration, blockedSlots, selectedDate)` checks for overlaps
+- Type: `BlockedSlot` in `src/types/index.ts` with `{start: number, end: number, bookingId: string}`
+- Server-side validation in `/api/bookings` POST endpoint also checks for conflicts
+
+**Date handling:**
+- Frontend sends dates in `YYYY-MM-DD` format (local date, not ISO UTC)
+- API uses local date boundaries: `new Date(year, month-1, day, 0, 0, 0)` instead of UTC
+- This prevents misclassification for bookings that cross midnight in non-UTC timezones
+
+**Overlap detection logic:**
+```typescript
+// Overlap: new starts before existing ends AND new ends after existing starts
+if (slotStartMinutes < blockedEndMinutes && slotEndMinutes > blockedStartMinutes) {
+  return false; // Slot is blocked
+}
+```
+
+**Affected components:**
+- `src/components/booking/booking-form.tsx` - Public booking page (uses `useBarberAvailability` hook)
+- `src/components/dashboard/offline-booking-dialog.tsx` - Offline booking dialog (uses shared hook)
+
+**Error message:** "Barber memiliki jadwal booking pada waktu tersebut. Pilih waktu lain atau barber berbeda." (HTTP 409 Conflict)
 
 ### User Management
 

@@ -6,6 +6,7 @@ Platform booking online untuk barbershop. Multi-tenant SaaS dengan notifikasi Wh
 
 - 📅 **Booking Online 24/7** - Pelanggan bisa booking kapan saja
 - 🏃 **Offline Booking** - Catat booking walk-in/customer langsung datang
+- ⏰ **Real-time Barber Availability** - Deteksi conflict jadwal barber secara real-time, mencegah double-booking
 - 📦 **Paket Layanan** - Buat bundle paket dari beberapa layanan dengan harga spesial
 - 📺 **Live Queue Display** - Display antrian real-time untuk TV di area waiting (mode TV)
 - 💬 **Notifikasi WhatsApp Otomatis** - Konfirmasi, reminder, dan notifikasi otomatis
@@ -122,6 +123,21 @@ Owner bisa mencatat booking dari customer yang datang langsung (walk-in):
 2. Isi form: nama customer, telepon, service, barber, tanggal/waktu
 3. Sistem akan tracking booking sebagai `source: OFFLINE`
 4. WhatsApp notifikasi tetap bisa dikirim jika nomor valid
+5. **Conflict detection:** Time slot yang sudah dibooking akan disabled otomatis
+
+### Barber Availability (Conflict Detection)
+
+Sistem mencegah double-booking barber dengan fitur real-time conflict detection:
+
+- **Visual feedback:** Time slot yang sudah dibooking disabled di UI
+- **Real-time check:** Fetch barber availability saat barber & tanggal dipilih
+- **Server validation:** Backend juga validasi conflict saat create booking
+- **Overlap detection:** Hitung durasi layanan untuk cek overlap dengan existing bookings
+- **Error message:** "Barber memiliki jadwal booking pada waktu tersebut. Pilih waktu lain atau barber berbeda."
+
+Fitur ini aktif di:
+- Booking form (public booking page)
+- Offline booking dialog (dashboard)
 
 ### Service Packages (Paket Layanan)
 

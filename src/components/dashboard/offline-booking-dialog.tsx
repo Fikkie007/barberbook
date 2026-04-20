@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { format, startOfDay, isSameDay } from "date-fns";
-import { id } from "date-fns/locale";
+import { startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -17,7 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Phone, Scissors, CalendarDays, Clock, User2, Mail, FileText, Package } from "lucide-react";
+import { User, Scissors, CalendarDays, Clock, FileText } from "lucide-react";
+import { useBarberAvailability, isTimeSlotAvailable } from "@/hooks/use-barber-availability";
 
 interface Service {
   id: string;
@@ -114,6 +113,9 @@ export default function OfflineBookingDialog({
   const selectedItem = formData.selectionType === "package" ? selectedPackage : selectedService;
   const itemPrice = selectedItem?.price || 0;
 
+  // Use shared hook for barber availability
+  const blockedSlots = useBarberAvailability(formData.barberId, formData.bookingDate);
+
   // Generate time slots based on shop hours
   const generateTimeSlots = () => {
     const slots: string[] = [];
@@ -169,26 +171,18 @@ export default function OfflineBookingDialog({
     return workingDay?.isOpen ?? false;
   };
 
-  // Check if time slot is in the past (for today)
-  const isTimeSlotAvailable = (time: string) => {
-    const now = new Date();
-    const selectedDate = formData.bookingDate;
-
-    if (!selectedDate) return true;
-
-    // If selected date is today, check if time has passed
-    if (isSameDay(selectedDate, now)) {
-      const [hour, min] = time.split(":").map(Number);
-      const slotTime = new Date(selectedDate);
-      slotTime.setHours(hour, min, 0, 0);
-      return slotTime > now;
-    }
-
-    return true;
+  // Wrapper for shared isTimeSlotAvailable helper
+  const checkTimeSlotAvailable = (time: string) => {
+    return isTimeSlotAvailable(
+      time,
+      selectedItem?.duration || 60,
+      blockedSlots,
+      formData.bookingDate
+    );
   };
 
   // Get available time slots for selected date
-  const availableTimeSlots = timeSlots.filter(isTimeSlotAvailable);
+  const availableTimeSlots = timeSlots.filter(checkTimeSlotAvailable);
 
   const resetForm = () => {
     setFormData({
@@ -545,7 +539,7 @@ export default function OfflineBookingDialog({
                   <Label className="text-slate-300 text-xs">Barber</Label>
                   <Select
                     value={formData.barberId}
-                    onValueChange={(value) => setFormData({ ...formData, barberId: value ?? "" })}
+                    onValueChange={(value) => setFormData({ ...formData, barberId: value ?? "", bookingTime: "" })}
                   >
                     <SelectTrigger className="w-full border-slate-600 bg-slate-700/50 text-white h-9">
                       <SelectValue placeholder="Barber manapun">
