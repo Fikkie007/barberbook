@@ -44,13 +44,32 @@ export default async function BookingsPage({
     redirect("/dashboard");
   }
 
-  // Build filter
+  // Build filter for bookings query
   const where: Record<string, unknown> = { shopId: activeShopId };
   if (
     selectedStatus &&
     ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].includes(selectedStatus)
   ) {
     where.status = selectedStatus;
+  }
+
+  // Get counts for all statuses (for filter tabs)
+  const statusCounts = await prisma.booking.groupBy({
+    by: ["status"],
+    where: { shopId: activeShopId },
+    _count: true,
+  });
+
+  const countsMap = {
+    PENDING: 0,
+    CONFIRMED: 0,
+    COMPLETED: 0,
+    CANCELLED: 0,
+    total: 0,
+  };
+  for (const item of statusCounts) {
+    countsMap[item.status as keyof typeof countsMap] = item._count;
+    countsMap.total += item._count;
   }
 
   // Get bookings, services, packages, barbers, and shop data
@@ -117,6 +136,7 @@ export default async function BookingsPage({
     <BookingsClient
       shopId={activeShopId}
       initialBookings={bookings}
+      statusCounts={countsMap}
       services={services}
       packages={packages}
       barbers={barbers}

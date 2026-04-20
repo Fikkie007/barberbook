@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import BookingTable from "@/components/dashboard/booking-table";
@@ -55,9 +55,18 @@ interface BookingWithRelations {
   barber: { name: string } | null;
 }
 
+interface StatusCounts {
+  PENDING: number;
+  CONFIRMED: number;
+  COMPLETED: number;
+  CANCELLED: number;
+  total: number;
+}
+
 interface BookingsClientProps {
   shopId: string;
   initialBookings: BookingWithRelations[];
+  statusCounts: StatusCounts;
   services: Service[];
   packages: ServicePackage[];
   barbers: Barber[];
@@ -72,6 +81,7 @@ interface BookingsClientProps {
 export default function BookingsClient({
   shopId,
   initialBookings,
+  statusCounts,
   services,
   packages,
   barbers,
@@ -83,44 +93,13 @@ export default function BookingsClient({
   const [bookings, setBookings] =
     useState<BookingWithRelations[]>(initialBookings);
 
-  // Compute status counts from current bookings state
-  const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {
-      PENDING: 0,
-      CONFIRMED: 0,
-      COMPLETED: 0,
-      CANCELLED: 0,
-    };
-    for (const booking of bookings) {
-      counts[booking.status] = (counts[booking.status] || 0) + 1;
-    }
-    return counts;
-  }, [bookings]);
-
   useEffect(() => {
     setBookings(initialBookings);
   }, [initialBookings]);
 
-  const handleBookingSuccess = async () => {
-    // Refresh bookings list
-    try {
-      const params = new URLSearchParams();
-      params.set("shopId", shopId); // Fixed: was "shop", should be "shopId"
-      if (selectedStatus) {
-        params.set("status", selectedStatus);
-      }
-
-      const response = await fetch(`/api/bookings?${params.toString()}`);
-      const data = await response.json();
-
-      if (response.ok && data.bookings) {
-        setBookings(data.bookings);
-      }
-    } catch (error) {
-      console.error("Failed to refresh bookings:", error);
-      // Fallback: reload page
-      window.location.reload();
-    }
+  const handleBookingSuccess = () => {
+    // Reload page to refresh bookings and counts
+    window.location.reload();
   };
 
   const handleStatusUpdate = async (id: string, status: string) => {
@@ -132,8 +111,8 @@ export default function BookingsClient({
       });
 
       if (response.ok) {
-        // Update local state
-        setBookings(bookings.map((b) => (b.id === id ? { ...b, status } : b)));
+        // Reload page to update counts and bookings
+        window.location.reload();
       }
     } catch (error) {
       console.error("Failed to update booking:", error);
@@ -164,7 +143,7 @@ export default function BookingsClient({
               : "bg-slate-700/50 text-slate-300 hover:bg-slate-700"
           }`}
         >
-          Semua ({bookings.length})
+          Semua ({statusCounts.total})
         </a>
         <a
           href={`/dashboard/bookings?shop=${shopId}&status=PENDING`}
